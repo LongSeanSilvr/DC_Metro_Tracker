@@ -1,0 +1,33 @@
+{
+  "session": {
+    "sessionId": "SessionId.f9d85bcc-ce17-427c-9213-65a48f24551e",
+    "application": {
+      "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
+    },
+    "attributes": {},
+    "user": {
+      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNBO5YCT4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAEB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5MOBPSHZED5STTJ2PCOQEVNVJRQ"
+    },
+    "new": false
+  },
+  "request": {
+    "type": "IntentRequest",
+    "requestId": "EdwRequestId.482d3559-212c-4a9b-b4a7-b26a52228052",
+    "timestamp": "2016-04-26T03:30:37Z",
+    "intent": {
+      "name": "GetDestTimes",
+      "slots": {
+        "station": {
+          "name": "station",
+          "value": "branch"
+        },
+        "destination": {
+          "name": "destination",
+          "value": "greenbelt"
+        }
+      }
+    },
+    "locale": "en-US"
+  },
+  "version": "1.0"
+}
