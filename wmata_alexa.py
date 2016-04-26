@@ -3,7 +3,6 @@ This app returns train times for the Metro DC transit system.
 """
 
 from __future__ import print_function
-import sys
 import httplib
 import urllib
 import json
@@ -220,7 +219,10 @@ def format_time(times):
     for i,time in enumerate(times):
         if len(times)-i == 1:
             stringt += "and "
-        stringt += "towards {} in {} minutes. ".format(time[0], time[1])
+        if time[1] == "1":
+            stringt += "towards {} in {} minute. ".format(time[0], time[1])
+        else:
+            stringt += "towards {} in {} minutes. ".format(time[0], time[1])
     return stringt
 
 def format_time2(times):
@@ -229,7 +231,10 @@ def format_time2(times):
     for i,time in enumerate(times):
         if len(times)-i == 1:
             stringt += "and "
-        stringt += "{} minutes, ".format(time[1])
+        if time[1] == "1":
+            stringt += "{} minutes, ".format(time[1])
+        else:
+            stringt += "{} minutes, ".format(time[1])
     return stringt
 # --------------- Helpers that build all of the responses ----------------------
 
