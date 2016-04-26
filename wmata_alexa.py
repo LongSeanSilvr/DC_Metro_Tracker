@@ -7,13 +7,12 @@ import httplib
 import urllib
 import json
 
-def lambda_handler(event):
-    """ Route the incoming request based on type (LaunchRequest, IntentRequest,
-    etc.) The JSON body of the request is provided in the event parameter.
-    """
+# ======================================================================================================================
+# session events
+# ======================================================================================================================
+def lambda_handler(event, context=None):
     print("event.session.application.applicationId=" +
           event['session']['application']['applicationId'])
-
 
     if event['session']['new']:
         on_session_started({'requestId': event['request']['requestId']},
@@ -28,51 +27,39 @@ def lambda_handler(event):
 
 
 def on_session_started(session_started_request, session):
-    """ Called when the session starts """
     print("on_session_started requestId=" + session_started_request['requestId']
           + ", sessionId=" + session['sessionId'])
 
 
 def on_launch(launch_request, session):
-    """ Called when the user launches the skill without specifying what they
-    want
-    """
-
     print("on_launch requestId=" + launch_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-    # Dispatch to your skill's launch
     return get_welcome_response()
 
 
 def on_intent(intent_request, session):
-    """ Called when the user specifies an intent for this skill """
-
     print("on_intent requestId=" + intent_request['requestId'] +
           ", sessionId=" + session['sessionId'])
 
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
-    # Dispatch to your skill's intent handlers
     if intent_name == "GetTimes":
         return get_time(intent, session)
-    elif intent_name == "GetDestTimes":
-        return get_dest_times(intent, session)
+    elif intent_name == "finish":
+        return handle_session_end_request()
     else:
         raise ValueError("Invalid intent")
 
 
 def on_session_ended(session_ended_request, session):
-    """ Called when the user ends the session.
-    Is not called when the skill returns should_end_session=true
-    """
     print("on_session_ended requestId=" + session_ended_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-    # add cleanup logic here
-
-# --------------- Functions that control the skill's behavior ------------------
 
 
+# ======================================================================================================================
+# skill behaviour functions
+# ======================================================================================================================
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
     add those here
@@ -91,9 +78,7 @@ def get_welcome_response():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for riding metro." \
-                    "Have a nice day! "
-    # Setting this to true ends the session and exits the skill.
+    speech_output = "Thank you for riding metro. Have a nice day!"
     should_end_session = True
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
@@ -102,51 +87,37 @@ def handle_session_end_request():
 def get_time(intent, session):
     card_title = intent['name']
     session_attributes = {}
-    should_end_session = False
-
-    if 'station' in intent['slots']:
+    should_end_session = True
+    try:
         station = intent['slots']['station']['value']
-        times = query_station(station)
-        str_time = format_time(times)
-        if times:
-            speech_output = "Here are the next trains arriving at {}. {}".format(station, str_time)
+        if len(intent['slots']['destination']) > 1:
+            dest = intent['slots']['destination']['value']
+            times = query_station(station, dest)
+        else:
+            times = query_station(station)
+
+        if times is None:
+            speech_output = ("I'm having a problem reaching the Metro Transit website."
+                             "Please try again in a few minutes.")
+            print(speech_output)
+        elif times == "no_intersection":
+            speech_output = "Those stations don't connect. Please try again."
             print(speech_output)
         else:
-            speech_output = "There are currently no trains scheduled for {}.".format(station)
-            print(speech_output)
-        reprompt_text = "Ask me about trains at a specific station."
-    else:
+            str_time = format_time(times)
+            if str_time:
+                speech_output = "there is {}".format(str_time)
+                print(speech_output)
+            else:
+                speech_output = "There are currently no trains scheduled for {}.".format(station)
+                print(speech_output)
+        reprompt_text = ""
+    except KeyError:
         speech_output = "I'm not sure what station you are talking about. " \
                         "Please try again."
         reprompt_text = "I'm not sure what station you need. " \
                         "Get metro times by saying, " \
                         "when is the next train from Dupont Circle."
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
-def get_dest_times(intent, session):
-    card_title = intent['name']
-    session_attributes = {}
-    should_end_session = False
-
-    if 'station' and 'destination' in intent['slots']:
-        station = intent['slots']['station']['value']
-        dest = intent['slots']['destination']['value']
-        times = query_station(station, dest)
-        str_time = format_time2(times)
-        if times:
-            speech_output = "The next trains arriving at {} going to {} will be here in: {}".format(station, dest, str_time)
-            print(speech_output)
-        else:
-            speech_output = "There are currently no trains scheduled for {} going to {}.".format(station, dest)
-            print(speech_output)
-        reprompt_text = "Ask me about trains at a specific station."
-    else:
-        speech_output = "I'm not sure what stations you are talking about. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what stations you need. " \
-                        "Get metro times by saying, " \
-                        "when is the next train from Dupont Circle to Shady Grove."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
@@ -159,17 +130,14 @@ def query_station(station, destination = None):
     params = urllib.urlencode({
     })
 
-    class Found(Exception): pass
-    try:
-        for line in station_data:
-            for code in station_data[line]:
-                if station.lower() in station_data[line][code]['Name'].lower():
-                    st_code = code
-                    st_index = station_data[line][code]['line_index']
-                    st_line = line
-                    raise Found
-    except Found:
-        pass
+    st_options = {}
+    for line in station_data:
+        for code in station_data[line]:
+            if station.lower() in station_data[line][code]['Name'].lower():
+                st_code = code
+                st_index = station_data[line][code]['line_index']
+                st_line = line
+                st_options[st_line] = {st_code: st_index}
 
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
@@ -178,67 +146,87 @@ def query_station(station, destination = None):
         response = conn.getresponse()
         data = response.read()
         data = json.loads(data)
-        times = [(train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
+        line_codes = {"RD":"red line",
+                      "BL":"blue line",
+                      "OR":"orange line",
+                      "SV":"silver line",
+                      "YL":"yellow line",
+                      "GR":"green line",
+                      "--":"ghost train",
+                      "Train":"ghost train"}
+        times = [(line_codes[train['Line']], train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
         conn.close()
     except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+        return None
 
     if destination is not None:
-        class Found(Exception): pass
-        try:
-            for code in station_data[st_line]:
+        dest_options = {}
+        for line in station_data:
+            for code in station_data[line]:
                 if destination.lower() in station_data[line][code]['Name'].lower():
                     dest_code = code
                     dest_index = station_data[line][code]['line_index']
                     dest_line = line
-                    raise Found
-        except Found:
-            pass
+                    dest_options[dest_line] = {dest_code: dest_index}
+
+        intersection = [x for x in st_options.keys() if x in dest_options.keys()]
+        if not intersection:
+            return "no_intersection"
 
         dest_trajectory = int(dest_index) - int(st_index)
 
         all_times = times
         times = []
         for time in all_times:
+            if not time[2]:
+                continue
             for line in station_data:
                 found = False
                 for code in station_data[line]:
-                    if time[0].lower() in station_data[line][code]['Name'].lower():
+                    if time[1].lower() == "train":
+                        target_index = "a ghost station"
+                        found = True
+                        break
+                    if time[1].lower() in station_data[line][code]['Name'].lower():
                         target_index = station_data[line][code]['line_index']
                         found = True
                         break
                 if found:
-                    targ_trajectory = int(target_index) - int(st_index)
-                    if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
+                    if target_index == "a ghost station":
                         times.append(time)
+                        break
+                    else:
+                        targ_trajectory = int(target_index) - int(st_index)
+                        if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
+                            times.append(time)
     return times
 
 def format_time(times):
     stringt = ""
-    times = [(time[0], time[1]) for time in times if time[1] not in ("BRD","ARR")]
+    times = [(time[0], time[1], time[2]) for time in times if time[2] not in ("BRD","ARR")]
     for i,time in enumerate(times):
-        if len(times)-i == 1:
+        line = time[0]
+        station = time[1]
+        if station.lower() == "train":
+            station = "a ghost station"
+        minutes = time[2]
+        if not minutes:
+            minutes = "unknown"
+        if len(times) != 1 and len(times)-i == 1:
             stringt += "and "
-        if time[1] == "1":
-            stringt += "towards {} in {} minute. ".format(time[0], time[1])
+        if line == "orange line":
+            stringt += "an "
         else:
-            stringt += "towards {} in {} minutes. ".format(time[0], time[1])
+            stringt += "a "
+        if minutes == "1":
+            stringt += "{} to {} in {} minute. ".format(line, station, minutes)
+        else:
+            stringt += "{} to {} in {} minutes. ".format(line, station, minutes)
     return stringt
 
-def format_time2(times):
-    stringt = ""
-    times = [(time[0], time[1]) for time in times if time[1] not in ("BRD","ARR")]
-    for i,time in enumerate(times):
-        if len(times)-i == 1:
-            stringt += "and "
-        if time[1] == "1":
-            stringt += "{} minutes, ".format(time[1])
-        else:
-            stringt += "{} minutes, ".format(time[1])
-    return stringt
-# --------------- Helpers that build all of the responses ----------------------
-
-
+# ======================================================================================================================
+# helpers
+# ======================================================================================================================
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
         'outputSpeech': {
