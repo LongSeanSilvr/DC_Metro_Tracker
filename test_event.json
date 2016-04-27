@@ -1,29 +1,44 @@
 {
   "session": {
-    "sessionId": "SessionId.f9d85bcc-ce17-427c-9213-65a48f24551e",
+    "sessionId": "SessionId.ef207374-9768-4d3c-ae8e-193c0f837a86",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
-    "attributes": {},
     "user": {
       "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNBO5YCT4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAEB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5MOBPSHZED5STTJ2PCOQEVNVJRQ"
     },
-    "new": false
+    "new": true
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.482d3559-212c-4a9b-b4a7-b26a52228052",
-    "timestamp": "2016-04-26T03:30:37Z",
+    "requestId": "EdwRequestId.bf92c7fe-6b6b-4a97-b5e6-b4323f8fe1d9",
+    "timestamp": "2016-04-27T16:32:30Z",
     "intent": {
-      "name": "GetDestTimes",
+      "name": "GetTimes",
       "slots": {
+        "link": {
+          "name": "link",
+          "value": "from"
+        },
         "station": {
           "name": "station",
-          "value": "branch"
+          "value": "Dupont"
         },
         "destination": {
           "name": "destination",
-          "value": "greenbelt"
+          "value": "noma"
+        },
+        "towards": {
+          "name": "towards",
+          "value": "to"
+        },
+        "prompt": {
+          "name": "prompt",
+          "value": "when is the"
+        },
+        "train": {
+          "name": "train",
+          "value": "train"
         }
       }
     },
