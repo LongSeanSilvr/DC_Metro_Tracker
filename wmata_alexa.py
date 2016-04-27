@@ -90,18 +90,25 @@ def get_time(intent, session):
     should_end_session = True
     try:
         station = intent['slots']['station']['value']
+        station = get_equivalents(station)
         if len(intent['slots']['destination']) > 1:
             dest = intent['slots']['destination']['value']
+            dest = get_equivalents(dest)
             times = query_station(station, dest)
         else:
             times = query_station(station)
 
         if times is None:
-            speech_output = ("I'm having a problem reaching the Metro Transit website."
-                             "Please try again in a few minutes.")
+            speech_output = ("I'm having a problem reaching the Metro Transit website. Please try again in a few minutes.")
             print(speech_output)
         elif times == "no_intersection":
             speech_output = "Those stations don't connect. Please try again."
+            print(speech_output)
+        elif times == "mordor":
+            speech_output = "One does not simply metro to Mordor."
+            print(speech_output)
+        elif times == "dulles":
+            speech_output = "One does not simply metro to dulles."
             print(speech_output)
         else:
             str_time = format_time(times)
@@ -109,7 +116,7 @@ def get_time(intent, session):
                 speech_output = "there is {}".format(str_time)
                 print(speech_output)
             else:
-                speech_output = "There are currently no trains scheduled for {}.".format(station)
+                speech_output = "There are currently no trains scheduled from {} to {}.".format(station,dest)
                 print(speech_output)
         reprompt_text = ""
     except KeyError:
@@ -139,6 +146,31 @@ def query_station(station, destination = None):
                 st_line = line
                 st_options[st_line] = {st_code: st_index}
 
+    if destination is not None:
+        if destination.lower() == "mordor":
+            return "mordor"
+        if destination.lower() == "dulles":
+            return "dulles"
+        dest_options = {}
+        for line in station_data:
+            for code in station_data[line]:
+                if destination.lower() in station_data[line][code]['Name'].lower():
+                    dest_code = code
+                    dest_index = station_data[line][code]['line_index']
+                    dest_line = line
+                    dest_options[dest_line] = {dest_code: dest_index}
+        intersection = [x for x in st_options.keys() if x in dest_options.keys()]
+
+        if not intersection:
+            return "no_intersection"
+        else:
+            shared_line = intersection[0]
+            st_code = st_options[shared_line].keys()[0]
+            st_index = st_options[shared_line][st_code]
+            dest_station = dest_options[shared_line].keys()[0]
+            dest_index = dest_options[shared_line][dest_station]
+            dest_trajectory = int(dest_index) - int(st_index)
+
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
         conn.request("GET", "/StationPrediction.svc/json/GetPrediction/{}?{}".format(st_code, params), "{body}",
@@ -153,34 +185,20 @@ def query_station(station, destination = None):
                       "YL":"yellow line",
                       "GR":"green line",
                       "--":"ghost train",
-                      "Train":"ghost train"}
+                      "Train":"ghost train",
+                      "No":"no passenger train"}
         times = [(line_codes[train['Line']], train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
         conn.close()
     except Exception as e:
         return None
 
     if destination is not None:
-        dest_options = {}
-        for line in station_data:
-            for code in station_data[line]:
-                if destination.lower() in station_data[line][code]['Name'].lower():
-                    dest_code = code
-                    dest_index = station_data[line][code]['line_index']
-                    dest_line = line
-                    dest_options[dest_line] = {dest_code: dest_index}
-
-        intersection = [x for x in st_options.keys() if x in dest_options.keys()]
-        if not intersection:
-            return "no_intersection"
-
-        dest_trajectory = int(dest_index) - int(st_index)
-
         all_times = times
         times = []
         for time in all_times:
             if not time[2]:
                 continue
-            for line in station_data:
+            for line in intersection:
                 found = False
                 for code in station_data[line]:
                     if time[1].lower() == "train":
@@ -201,6 +219,52 @@ def query_station(station, destination = None):
                             times.append(time)
     return times
 
+def get_equivalents(station):
+    if any(name in station.lower() for name in ["gallery","china"]):
+        station = "gallery"
+    if "king st" in station.lower():
+        station = "old town"
+    if "vernon" in station.lower():
+        station = "vernon"
+    if "willy" in station.lower():
+        station = "wiehle-reston east"
+    if ("stadium" or "armory") in station.lower():
+        station = "stadium-armory"
+    if any(name in station.lower() for name in ["franconia","springfield"]):
+        station = "franconia-springfield"
+    if any(name in station.lower() for name in ["african","you street"]):
+        station = "U street"
+    if ("maryland") in station.lower():
+        station = "college park"
+    if any(name in station.lower() for name in ["navy yard","baseball","nats park"]):
+        station = "navy yard"
+    if "howard" in station.lower():
+        station = "howard"
+    if "prince" in station.lower():
+        station = "prince"
+    if any(name in station.lower() for name in ["university of virginia","virginia tech"]):
+        station = "west falls church"
+    if "american university" in station.lower():
+        station = "tenleytown"
+    if "grosvenor" in station.lower():
+        station = "grosvenor"
+    if "catholic" in station.lower():
+        station = "brookland"
+    if "gallaudet" in station.lower():
+        station = "noma"
+    if "georgia ave" in station.lower():
+        station = "petworth"
+    if "minnesota" in station.lower():
+        station = "minnesota"
+    if "potomac" in station.lower():
+        station = "potomac"
+    if "branch" in station.lower():
+        station = "branch"
+    if "rhode" in station.lower():
+        station = "rhode island"
+    return station
+
+
 def format_time(times):
     stringt = ""
     times = [(time[0], time[1], time[2]) for time in times if time[2] not in ("BRD","ARR")]
@@ -209,6 +273,8 @@ def format_time(times):
         station = time[1]
         if station.lower() == "train":
             station = "a ghost station"
+        if station.lower() == "no passenger":
+            station = "an undisclosed station"
         minutes = time[2]
         if not minutes:
             minutes = "unknown"
@@ -219,9 +285,12 @@ def format_time(times):
         else:
             stringt += "a "
         if minutes == "1":
-            stringt += "{} to {} in {} minute. ".format(line, station, minutes)
+            stringt += "{} to {} in {} minute, ".format(line, station, minutes)
         else:
-            stringt += "{} to {} in {} minutes. ".format(line, station, minutes)
+            stringt += "{} to {} in {} minutes, ".format(line, station, minutes)
+    stringt = stringt[:-1]
+    if stringt:
+        stringt += "."
     return stringt
 
 # ======================================================================================================================
