@@ -137,30 +137,29 @@ def query_station(station, destination = None):
     params = urllib.urlencode({
     })
 
-    st_options = {}
-    for line in station_data:
-        for code in station_data[line]:
-            if station.lower() in station_data[line][code]['Name'].lower():
-                st_code = code
-                st_index = station_data[line][code]['line_index']
-                st_line = line
-                st_options[st_line] = {st_code: st_index}
+    st_options = get_options(station, station_data)
 
     if destination is not None:
         if destination.lower() == "mordor":
             return "mordor"
         if destination.lower() == "dulles":
             return "dulles"
-        dest_options = {}
-        for line in station_data:
-            for code in station_data[line]:
-                if destination.lower() in station_data[line][code]['Name'].lower():
-                    dest_code = code
-                    dest_index = station_data[line][code]['line_index']
-                    dest_line = line
-                    dest_options[dest_line] = {dest_code: dest_index}
-        intersection = [x for x in st_options.keys() if x in dest_options.keys()]
 
+        if "farragut" in destination:
+                if "red" in st_options.keys():
+                    destination = "farragut north"
+                elif any(x in st_options.keys() for x in ["blue","orange","silver"]):
+                    destination = "farragut west"
+        dest_options = get_options(destination,station_data)
+
+        if "farragut" in station:
+            if "red" in dest_options.keys():
+                station = "farragut north"
+            elif any(x in dest_options.keys() for x in ["blue","orange","silver"]):
+                station = "farragut west"
+        st_options = get_options(station, station_data)
+
+        intersection = [x for x in st_options.keys() if x in dest_options.keys()]
         if not intersection:
             return "no_intersection"
         else:
@@ -219,6 +218,17 @@ def query_station(station, destination = None):
                             times.append(time)
     return times
 
+def get_options(station, station_data):
+    st_options = {}
+    for line in station_data:
+        for code in station_data[line]:
+            if station.lower() in station_data[line][code]['Name'].lower():
+                st_code = code
+                st_index = station_data[line][code]['line_index']
+                st_line = line
+                st_options[st_line] = {st_code: st_index}
+    return st_options
+
 def get_equivalents(station):
     if any(name in station.lower() for name in ["gallery","china"]):
         station = "gallery"
@@ -262,6 +272,8 @@ def get_equivalents(station):
         station = "branch"
     if "rhode" in station.lower():
         station = "rhode island"
+    if any(station.lower() == x for x in ["know my","number", "know muh", "no my"]):
+        station = "noma"
     return station
 
 
