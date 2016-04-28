@@ -86,7 +86,8 @@ def get_times(intent, session):
             speech_output = get_speech_output(times, station)
         reprompt_text = ""
     except KeyError:
-        speech_output = "I'm not sure what station you are talking about. Please try again."
+        speech_output = ("Please specify your station of origin. For example, ask when is the next train "
+                         "from Dupont circle to Shady Grove.")
         reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
@@ -95,18 +96,22 @@ def get_times(intent, session):
 
 def query_station(station, destination=None):
     station_data = get_stations()
+    if not validate(station, station_data):
+        return "invalid_station"
     st_options = get_options(station, station_data)
     st_code = st_options[st_options.keys()[0]].keys()[0]
     times = retrieve_times(st_code)
 
     if destination is not None:
+        if not validate(destination, station_data):
+            return "invalid_destination"
         # Easter eggs
         if any(destination.lower() == x for x in ["dulles", "mordor"]):
             return destination
 
         # Find correct farragut
         if "farragut" in (station, destination):
-            (station, destination) = which_farragut(station, destination)
+            (station, destination) = which_farragut(station, destination, st_options, station_data)
             # recalculate station options
             st_options = get_options(station, station_data)
 
@@ -153,20 +158,24 @@ def filter_times(times, intersection, station_data, st_index, dest_trajectory):
         if not time[2]:
             continue
         for line in intersection:
+            found = False
             for code in station_data[line]:
                 if time[1].lower() == "train":
                     target_index = "a ghost station"
+                    found = True
                     break
                 if time[1].lower() in station_data[line][code]['Name'].lower():
                     target_index = station_data[line][code]['line_index']
+                    found = True
                     break
-            if target_index == "a ghost station":
-                filtered_times.append(time)
-                break
-            else:
-                targ_trajectory = int(target_index) - int(st_index)
-                if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
+            if found:
+                if target_index == "a ghost station":
                     filtered_times.append(time)
+                    break
+                else:
+                    targ_trajectory = int(target_index) - int(st_index)
+                    if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
+                        filtered_times.append(time)
     return filtered_times
 
 
@@ -203,6 +212,15 @@ def get_stations():
     return station_data
 
 
+def validate(station, station_data):
+    valid = False
+    for line in station_data:
+        for code in station_data[line]:
+            if station.lower() in station_data[line][code]['Name'].lower():
+                valid = True
+    return valid
+
+
 def get_line_codes():
     line_codes = {"RD": "red line",
                   "BL": "blue line",
@@ -232,7 +250,7 @@ def get_equivalents(station):
         station = "franconia-springfield"
     if any(name in station.lower() for name in ["african", "you street"]):
         station = "U street"
-    if ("maryland") in station.lower():
+    if "maryland" in station.lower():
         station = "college park"
     if any(name in station.lower() for name in ["navy yard", "baseball", "nats park"]):
         station = "navy yard"
@@ -262,7 +280,7 @@ def get_equivalents(station):
         station = "rhode island"
     if "dallas" in station.lower():
         station = "dulles"
-    if any(station.lower() == x for x in ["know my", "number", "know muh", "no my"]):
+    if any(station.lower() == x for x in ["know my", "number", "know muh", "no my", "know much"]):
         station = "noma"
     return station
 
@@ -314,11 +332,15 @@ def get_speech_output(times, station, destination=None):
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
     elif times == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
+    elif times == "invalid_destination":
+        speech_output = "Sorry, I don't recognize the destination {}. Please try again.".format(destination)
+    elif times == "invalid_station":
+        speech_output = "Sorry, I don't recognize the station {}. Please try again.".format(station)
     elif times == "no_intersection":
         speech_output = "Those stations don't connect. Please try again."
-    elif times in ("mordor","Mordor"):
+    elif times in ("mordor", "Mordor"):
         speech_output = "One does not simply metro to Mordor."
-    elif times in ("dulles","Dulles"):
+    elif times in ("dulles", "Dulles"):
         speech_output = "One does not simply metro to dulles."
     else:
         str_time = format_time(times)

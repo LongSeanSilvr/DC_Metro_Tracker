@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.2b7af34e-f683-4bdc-bf0c-9d5f8f181064",
+    "sessionId": "SessionId.b0822f58-1c0e-4b5f-b49f-9a98680d9a3d",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,8 +11,8 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.74d74da1-e9ec-4b6f-8501-718a9fae4101",
-    "timestamp": "2016-04-28T03:11:33Z",
+    "requestId": "EdwRequestId.b32881c8-d195-42f7-89dc-8b85b1d7f254",
+    "timestamp": "2016-04-28T04:34:33Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
@@ -20,12 +20,11 @@
           "name": "link"
         },
         "station": {
-          "name": "station",
-          "value": "metro center"
+          "name": "station"
         },
         "destination": {
           "name": "destination",
-          "value": "Dulles"
+          "value": "Farragut"
         },
         "towards": {
           "name": "towards",
@@ -35,7 +34,8 @@
           "name": "prompt"
         },
         "train": {
-          "name": "train"
+          "name": "train",
+          "value": "train"
         }
       }
     },
