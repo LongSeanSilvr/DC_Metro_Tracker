@@ -26,11 +26,10 @@
         },
         "station": {
           "name": "station",
-          "value": "Dupont circle"
+          "value": "shaw"
         },
         "destination": {
-          "name": "destination",
-          "value": "the national mall"
+          "name": "destination"
         },
         "towards": {
           "name": "towards"

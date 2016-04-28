@@ -86,7 +86,7 @@ def get_times(intent, session):
         else:
             line = None
         (times, station, destination) = query_station(station, dest, line)
-        speech_output = get_speech_output(times, station, dest)
+        speech_output = get_speech_output(times, station, dest, line)
         reprompt_text = ""
     except KeyError:
         speech_output = ("Please specify your station of origin. For example, ask when is the next train "
@@ -103,8 +103,11 @@ def query_station(station, destination, line):
     if not station:
         return "invalid_station"
     st_options = get_options(station, station_data)
-    st_code = st_options[st_options.keys()[0]].keys()[0]
-    times = retrieve_times(st_code)
+    if line:
+        st_code = st_options[line].keys()[0]
+    else:
+        st_code = st_options[st_options.keys()[0]].keys()[0]
+    times = retrieve_times(st_code, line)
 
     if destination is not None:
         destination = name_lookup(destination, station_data)
@@ -137,7 +140,7 @@ def query_station(station, destination, line):
     return times, station, destination
 
 
-def retrieve_times(st_code):
+def retrieve_times(st_code, line=None):
     headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
     params = urllib.urlencode({})
     try:
@@ -149,11 +152,16 @@ def retrieve_times(st_code):
         conn.close()
     except:
         return None
-    line_codes = get_line_codes()
-    try:
-        times = [(line_codes[train[u'Line']], train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
-    except KeyError:
-        return "unknown_line"
+    if line:
+        try:
+            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains'] if (line in train[u'Line'])]
+        except KeyError:
+            return "unknown_line"
+    else:
+        try:
+            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
+        except KeyError:
+            return "unknown_line"
     return times
 
 
@@ -229,7 +237,7 @@ def name_lookup(station, station_data):
     return name
 
 
-def get_line_codes():
+def code2line(line, reverse=False):
     line_codes = {"RD": "red line",
                   "BL": "blue line",
                   "OR": "orange line",
@@ -240,7 +248,17 @@ def get_line_codes():
                   "": "ghost train",
                   "Train": "ghost train",
                   "No": "no passenger train"}
-    return line_codes
+    if (not reverse) and (line in line_codes.keys()):
+        code = line_codes[line]
+        return code
+    elif reverse:
+        for key, value in line_codes.iteritems():
+            if line in value:
+                code = key
+                break
+    else:
+        code = None
+    return code
 
 
 def get_equivalents(station):
@@ -341,7 +359,7 @@ def format_time(times):
     return response
 
 
-def get_speech_output(times, station, destination=None):
+def get_speech_output(times, station, destination, line):
     if times is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
     elif times == "unknown_station":
@@ -361,10 +379,12 @@ def get_speech_output(times, station, destination=None):
         if str_time:
             speech_output = "there is {}".format(str_time)
         else:
+            if "line" not in line:
+                line += " line"
             if destination:
-                speech_output = "There are currently no trains scheduled from {} to {}.".format(station, destination)
+                speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station, destination)
             else:
-                speech_output = "There are currently no trains scheduled for {}.".format(station)
+                speech_output = "There are currently no {} trains scheduled for {}.".format(line, station)
     return speech_output
 
 
