@@ -101,16 +101,16 @@ def query_station(station, destination=None):
 
     if destination is not None:
         # Easter eggs
-        if any(destination == x for x in ["dulles", "mordor"]):
+        if any(destination.lower() == x for x in ["dulles", "mordor"]):
             return destination
 
         # Find correct farragut
         if "farragut" in (station, destination):
             (station, destination) = which_farragut(station, destination)
             # recalculate station options
-            st_options = get_options(station)
+            st_options = get_options(station, station_data)
 
-        dest_options = get_options(destination)
+        dest_options = get_options(destination, station_data)
         intersection = [x for x in st_options.keys() if x in dest_options.keys()]
 
         if not intersection:
@@ -316,9 +316,9 @@ def get_speech_output(times, station, destination=None):
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
     elif times == "no_intersection":
         speech_output = "Those stations don't connect. Please try again."
-    elif times == "mordor":
+    elif times in ("mordor","Mordor"):
         speech_output = "One does not simply metro to Mordor."
-    elif times == "dulles":
+    elif times in ("dulles","Dulles"):
         speech_output = "One does not simply metro to dulles."
     else:
         str_time = format_time(times)

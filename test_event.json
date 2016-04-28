@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.facfa705-0e6a-4d00-8b5e-9f5e656486ee",
+    "sessionId": "SessionId.2b7af34e-f683-4bdc-bf0c-9d5f8f181064",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,8 +11,8 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.5d1f1d0e-8c4c-443b-8cc2-83d85279512b",
-    "timestamp": "2016-04-28T01:35:39Z",
+    "requestId": "EdwRequestId.74d74da1-e9ec-4b6f-8501-718a9fae4101",
+    "timestamp": "2016-04-28T03:11:33Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
@@ -21,13 +21,15 @@
         },
         "station": {
           "name": "station",
-          "value": "noma"
+          "value": "metro center"
         },
         "destination": {
-          "name": "destination"
+          "name": "destination",
+          "value": "Dulles"
         },
         "towards": {
-          "name": "towards"
+          "name": "towards",
+          "value": "to"
         },
         "prompt": {
           "name": "prompt"
