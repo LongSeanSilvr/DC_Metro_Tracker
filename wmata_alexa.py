@@ -79,11 +79,14 @@ def get_times(intent, session):
         if len(intent['slots']['destination']) > 1:
             dest = intent['slots']['destination']['value']
             dest = get_equivalents(dest)
-            (times, station, dest) = query_station(station, dest)
-            speech_output = get_speech_output(times, station, dest)
         else:
-            (times, station, destination) = query_station(station)
-            speech_output = get_speech_output(times, station)
+            dest = None
+        if len(intent['slots']['line']) > 1:
+            line = intent['slots']['line']['value']
+        else:
+            line = None
+        (times, station, destination) = query_station(station, dest, line)
+        speech_output = get_speech_output(times, station, dest)
         reprompt_text = ""
     except KeyError:
         speech_output = ("Please specify your station of origin. For example, ask when is the next train "
@@ -94,7 +97,7 @@ def get_times(intent, session):
         card_title, speech_output, reprompt_text, should_end_session))
 
 
-def query_station(station, destination=None):
+def query_station(station, destination, line):
     station_data = get_stations()
     station = name_lookup(station, station_data)
     if not station:
@@ -121,7 +124,7 @@ def query_station(station, destination=None):
         intersection = [x for x in st_options.keys() if x in dest_options.keys()]
 
         if not intersection:
-            return "no_intersection"
+            times = "no_intersection"
         else:
             shared_line = intersection[0]
             st_code = st_options[shared_line].keys()[0]
@@ -129,7 +132,7 @@ def query_station(station, destination=None):
             dest_station = dest_options[shared_line].keys()[0]
             dest_index = dest_options[shared_line][dest_station]
             dest_trajectory = int(dest_index) - int(st_index)
-        times = filter_times(times, intersection, station_data, st_index, dest_trajectory)
+            times = filter_times(times, intersection, station_data, st_index, dest_trajectory)
 
     return times, station, destination
 
@@ -283,6 +286,12 @@ def get_equivalents(station):
         station = "branch"
     if "rhode" in station.lower():
         station = "rhode island"
+    if "zoo" in station.lower():
+        station = "zoo"
+    if "verizon" in station.lower():
+        station = "gallery place"
+    if "national mall" in station.lower():
+        station = "smithsonian"
     if "dallas" in station.lower():
         station = "dulles"
     if any(station.lower() == x for x in ["know my", "number", "know muh", "no my", "know much"]):
