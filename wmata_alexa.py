@@ -161,7 +161,7 @@ def get_times(intent, session):
         else:
             line = None
         (times, station, destination) = query_station(station, dest, line)
-        speech_output = get_speech_output(times, station, dest, line)
+        speech_output = get_speech_output(times, station, destination, line)
         reprompt_text = ""
     except KeyError:
         speech_output = ("Please specify your station of origin. For example, ask when is the next train "
@@ -176,7 +176,7 @@ def query_station(station, destination, line):
     station_data = get_stations()
     station = name_lookup(station, station_data)
     if not station:
-        return "invalid_station"
+        return "invalid_station", station, destination
     st_options = get_options(station, station_data)
     if line:
         st_code = st_options[line].keys()[0]
@@ -187,7 +187,9 @@ def query_station(station, destination, line):
     if destination is not None:
         destination = name_lookup(destination, station_data)
         if not destination:
-            return "invalid_destination"
+            return "invalid_destination", station, destination
+        if destination == station:
+            return "same_stations", station, destination
         # Easter eggs
         if any(destination.lower() == x for x in ["dulles", "mordor"]):
             return destination
@@ -454,7 +456,7 @@ def get_speech_output(flag, station, destination, line=None):
     elif flag == "conn_problem":
         speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
     elif flag == "same_stations":
-        speech_output = "Those are the same stations!"
+        speech_output = "Those are the same stations you silly goose!"
     elif isinstance(flag, int):
         if flag == 1:
             speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
@@ -465,8 +467,9 @@ def get_speech_output(flag, station, destination, line=None):
         if str_time:
             speech_output = "there is {}".format(str_time)
         else:
-            if "line" not in line:
-                line += " line"
+            if line:
+                if "line" not in line:
+                    line += " line"
             if destination:
                 speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station,
                                                                                                    destination)

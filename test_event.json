@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.e5c75180-04de-46c7-b223-075828db514e",
+    "sessionId": "SessionId.da5d6287-5a35-4635-9ca5-9c1aa6dd4e94",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,30 +11,36 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.4102d43d-c97c-4206-a250-610e832d6c27",
-    "timestamp": "2016-04-28T20:55:30Z",
+    "requestId": "EdwRequestId.dd101912-8c2c-44ad-b336-69a1cbf3f275",
+    "timestamp": "2016-04-28T22:14:01Z",
     "intent": {
-      "name": "CommuteEstimate",
+      "name": "GetTimes",
       "slots": {
-        "commprompt": {
-          "name": "commprompt",
-          "value": "estimated travel time"
+        "line": {
+          "name": "line"
         },
-        "commto": {
-          "name": "commto",
-          "value": "to"
+        "link": {
+          "name": "link",
+          "value": "from"
+        },
+        "station": {
+          "name": "station",
+          "value": "noma"
         },
         "destination": {
           "name": "destination",
-          "value": "metro"
+          "value": "noma"
         },
-        "source": {
-          "name": "source",
-          "value": "Dupont circle"
+        "towards": {
+          "name": "towards",
+          "value": "to"
         },
-        "commlink": {
-          "name": "commlink",
-          "value": "from"
+        "prompt": {
+          "name": "prompt"
+        },
+        "train": {
+          "name": "train",
+          "value": "train"
         }
       }
     },
