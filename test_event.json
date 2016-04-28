@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.ef207374-9768-4d3c-ae8e-193c0f837a86",
+    "sessionId": "SessionId.facfa705-0e6a-4d00-8b5e-9f5e656486ee",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,34 +11,29 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.bf92c7fe-6b6b-4a97-b5e6-b4323f8fe1d9",
-    "timestamp": "2016-04-27T16:32:30Z",
+    "requestId": "EdwRequestId.5d1f1d0e-8c4c-443b-8cc2-83d85279512b",
+    "timestamp": "2016-04-28T01:35:39Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
         "link": {
-          "name": "link",
-          "value": "from"
+          "name": "link"
         },
         "station": {
           "name": "station",
-          "value": "Dupont"
-        },
-        "destination": {
-          "name": "destination",
           "value": "noma"
         },
+        "destination": {
+          "name": "destination"
+        },
         "towards": {
-          "name": "towards",
-          "value": "to"
+          "name": "towards"
         },
         "prompt": {
-          "name": "prompt",
-          "value": "when is the"
+          "name": "prompt"
         },
         "train": {
-          "name": "train",
-          "value": "train"
+          "name": "train"
         }
       }
     },
