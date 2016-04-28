@@ -46,6 +46,8 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
     if intent_name == "GetTimes":
         return get_times(intent, session)
+    elif intent_name == "CommuteEstimate":
+        return commute_estimate(intent, session)
     else:
         raise ValueError("Invalid intent")
 
@@ -66,7 +68,79 @@ def get_welcome_response():
                      "when is the next train from Dupont Circle to Shady Grove?")
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, should_end_session, reprompt_text))
+
+
+def commute_estimate(intent, session):
+    card_title = "commute_estimate"
+    should_end_session = True
+    session_attributes = {}
+    station_data = get_stations()
+
+    # Validate that user has given a source and destination, and that they are recognized stations
+    try:
+        st = get_equivalents(intent['slots']['source']['value'])
+        station = name_lookup(st, station_data)
+        if not station:
+            speech_output = "Sorry, I couldn't recognize station {}. Please try again.".format(st)
+            print(speech_output)
+            return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
+                                                                               should_end_session))
+        dst = get_equivalents(intent['slots']['destination']['value'])
+        destination = name_lookup(dst, station_data)
+        if not destination:
+            speech_output = "Sorry, I couldn't recognize station {}. Please try again.".format(dst)
+            print(speech_output)
+            return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
+                                                                               should_end_session))
+    except KeyError:
+        speech_output = "To get travel times, you must specify an origin and a destination. For example, Say travel " \
+                        "times from Dupont to Shady Grove."
+        print(speech_output)
+        return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session))
+
+    # Check for Farragut mixup
+    station_options = get_options(station, station_data)
+    if "farragut" in (station, destination):
+        (station, destination) = which_farragut(station, destination, station_options, station_data)
+        # recalculate station options
+        station_options = get_options(station, station_data)
+    destination_options = get_options(destination, station_data)
+
+    estimate = retrieve_estimate(station_options, destination_options)
+    speech_output = get_speech_output(estimate, station, destination)
+    print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session))
+
+def retrieve_estimate(station_options, destination_options):
+
+    intersection = [x for x in station_options.keys() if x in destination_options.keys()]
+    if not intersection:
+        return "no_intersection"
+    else:
+        shared_line = intersection[0]
+        station_code = station_options[shared_line].keys()[0]
+        destination_code = destination_options[shared_line].keys()[0]
+        estimate = api_estimate(station_code, destination_code)
+        return estimate
+
+def api_estimate(station_code, destination_code):
+    if station_code ==  destination_code:
+        return "same_stations"
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
+    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
+    try:
+        conn = httplib.HTTPSConnection('api.wmata.com')
+        conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
+        response = conn.getresponse()
+        data = json.loads(response.read())
+        conn.close()
+        commute_time = data['StationToStationInfos'][0]['RailTime']
+        return commute_time
+    except:
+        return "conn_problem"
 
 
 def get_times(intent, session):
@@ -83,6 +157,7 @@ def get_times(intent, session):
             dest = None
         if len(intent['slots']['line']) > 1:
             line = intent['slots']['line']['value']
+            line = line.split()[0]  # if line is in the form "x line", set line to x
         else:
             line = None
         (times, station, destination) = query_station(station, dest, line)
@@ -94,7 +169,7 @@ def get_times(intent, session):
         reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, should_end_session, reprompt_text))
 
 
 def query_station(station, destination, line):
@@ -154,7 +229,8 @@ def retrieve_times(st_code, line=None):
         return None
     if line:
         try:
-            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains'] if (line in train[u'Line'])]
+            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']
+                     if (line in code2line(train[u'Line']))]
         except KeyError:
             return "unknown_line"
     else:
@@ -252,6 +328,7 @@ def code2line(line, reverse=False):
         code = line_codes[line]
         return code
     elif reverse:
+        code = None
         for key, value in line_codes.iteritems():
             if line in value:
                 code = key
@@ -359,30 +436,40 @@ def format_time(times):
     return response
 
 
-def get_speech_output(times, station, destination, line):
-    if times is None:
+def get_speech_output(flag, station, destination, line=None):
+    if flag is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
-    elif times == "unknown_station":
+    elif flag == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
-    elif times == "invalid_destination":
+    elif flag == "invalid_destination":
         speech_output = "Sorry, I don't recognize that destination. Please try again."
-    elif times == "invalid_station":
+    elif flag == "invalid_station":
         speech_output = "Sorry, I don't recognize that station. Please try again."
-    elif times == "no_intersection":
+    elif flag == "no_intersection":
         speech_output = "Those stations don't connect. Please try again."
-    elif times in ("mordor", "Mordor"):
+    elif flag in ("mordor", "Mordor"):
         speech_output = "One does not simply metro to Mordor."
-    elif times in ("dulles", "Dulles"):
+    elif flag in ("dulles", "Dulles"):
         speech_output = "One does not simply metro to dulles."
+    elif flag == "conn_problem":
+        speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
+    elif flag == "same_stations":
+        speech_output = "Those are the same stations!"
+    elif isinstance(flag, int):
+        if flag == 1:
+            speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
+        else:
+            speech_output ="The current travel time between {} and {} is {} minutes.".format(station, destination, flag)
     else:
-        str_time = format_time(times)
+        str_time = format_time(flag)
         if str_time:
             speech_output = "there is {}".format(str_time)
         else:
             if "line" not in line:
                 line += " line"
             if destination:
-                speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station, destination)
+                speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station,
+                                                                                                   destination)
             else:
                 speech_output = "There are currently no {} trains scheduled for {}.".format(line, station)
     return speech_output
@@ -391,7 +478,7 @@ def get_speech_output(times, station, destination, line):
 # ======================================================================================================================
 # helpers
 # ======================================================================================================================
-def build_speechlet_response(title, output, reprompt_text, should_end_session):
+def build_speechlet_response(title, output, should_end_session, reprompt_text=""):
     return {
         'outputSpeech': {
             'type': 'PlainText',

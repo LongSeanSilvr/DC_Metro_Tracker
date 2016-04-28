@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.8f4b8302-9cfb-49a9-be6f-c4e0a2829afc",
+    "sessionId": "SessionId.e5c75180-04de-46c7-b223-075828db514e",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,36 +11,30 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.924977c5-04f7-493b-a04d-195d321f5226",
-    "timestamp": "2016-04-28T15:26:34Z",
+    "requestId": "EdwRequestId.4102d43d-c97c-4206-a250-610e832d6c27",
+    "timestamp": "2016-04-28T20:55:30Z",
     "intent": {
-      "name": "GetTimes",
+      "name": "CommuteEstimate",
       "slots": {
-        "line": {
-          "name": "line",
-          "value": "yellow"
+        "commprompt": {
+          "name": "commprompt",
+          "value": "estimated travel time"
         },
-        "link": {
-          "name": "link",
-          "value": "from"
-        },
-        "station": {
-          "name": "station",
-          "value": "shaw"
+        "commto": {
+          "name": "commto",
+          "value": "to"
         },
         "destination": {
-          "name": "destination"
+          "name": "destination",
+          "value": "metro"
         },
-        "towards": {
-          "name": "towards"
+        "source": {
+          "name": "source",
+          "value": "Dupont circle"
         },
-        "prompt": {
-          "name": "prompt",
-          "value": "get me the"
-        },
-        "train": {
-          "name": "train",
-          "value": "train"
+        "commlink": {
+          "name": "commlink",
+          "value": "from"
         }
       }
     },
