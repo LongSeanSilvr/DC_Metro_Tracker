@@ -28,7 +28,7 @@ def lambda_handler(event, context=None):
 
 
 # ======================================================================================================================
-# Session event functions
+# Session Event Functions
 # ======================================================================================================================
 def on_session_started(session_started_request, session):
     print("on_session_started requestId={}, sessionId={}".format(session_started_request['requestId'],
@@ -56,7 +56,7 @@ def on_session_ended(session_ended_request, session):
 
 
 # ======================================================================================================================
-# skill behaviour functions
+# Skill Behaviours -- Major Functions
 # ======================================================================================================================
 def get_welcome_response():
     card_title = "Welcome"
@@ -179,6 +179,9 @@ def filter_times(times, intersection, station_data, st_index, dest_trajectory):
     return filtered_times
 
 
+# ======================================================================================================================
+# Auxiliary and minor Functions
+# ======================================================================================================================
 def which_farragut(station, destination, st_options, station_data):
     if "farragut" in destination:
         if "red" in st_options.keys():
