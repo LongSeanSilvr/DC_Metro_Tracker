@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.b0822f58-1c0e-4b5f-b49f-9a98680d9a3d",
+    "sessionId": "SessionId.b8d28921-80d0-4eee-a841-7f94199bf506",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,20 +11,22 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.b32881c8-d195-42f7-89dc-8b85b1d7f254",
-    "timestamp": "2016-04-28T04:34:33Z",
+    "requestId": "EdwRequestId.163b95ff-88d4-4320-8c85-073bd221a620",
+    "timestamp": "2016-04-28T04:45:42Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
         "link": {
-          "name": "link"
+          "name": "link",
+          "value": "from"
         },
         "station": {
-          "name": "station"
+          "name": "station",
+          "value": "metro"
         },
         "destination": {
           "name": "destination",
-          "value": "Farragut"
+          "value": "Dupont"
         },
         "towards": {
           "name": "towards",

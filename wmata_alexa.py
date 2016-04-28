@@ -79,10 +79,10 @@ def get_times(intent, session):
         if len(intent['slots']['destination']) > 1:
             dest = intent['slots']['destination']['value']
             dest = get_equivalents(dest)
-            times = query_station(station, dest)
+            (times, station, dest) = query_station(station, dest)
             speech_output = get_speech_output(times, station, dest)
         else:
-            times = query_station(station)
+            (times, station, destination) = query_station(station)
             speech_output = get_speech_output(times, station)
         reprompt_text = ""
     except KeyError:
@@ -96,14 +96,16 @@ def get_times(intent, session):
 
 def query_station(station, destination=None):
     station_data = get_stations()
-    if not validate(station, station_data):
+    station = name_lookup(station, station_data)
+    if not station:
         return "invalid_station"
     st_options = get_options(station, station_data)
     st_code = st_options[st_options.keys()[0]].keys()[0]
     times = retrieve_times(st_code)
 
     if destination is not None:
-        if not validate(destination, station_data):
+        destination = name_lookup(destination, station_data)
+        if not destination:
             return "invalid_destination"
         # Easter eggs
         if any(destination.lower() == x for x in ["dulles", "mordor"]):
@@ -129,7 +131,7 @@ def query_station(station, destination=None):
             dest_trajectory = int(dest_index) - int(st_index)
         times = filter_times(times, intersection, station_data, st_index, dest_trajectory)
 
-    return times
+    return times, station, destination
 
 
 def retrieve_times(st_code):
@@ -215,13 +217,13 @@ def get_stations():
     return station_data
 
 
-def validate(station, station_data):
-    valid = False
+def name_lookup(station, station_data):
+    name = ""
     for line in station_data:
         for code in station_data[line]:
             if station.lower() in station_data[line][code]['Name'].lower():
-                valid = True
-    return valid
+                name = station_data[line][code]['Name'].lower()
+    return name
 
 
 def get_line_codes():
@@ -336,9 +338,9 @@ def get_speech_output(times, station, destination=None):
     elif times == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
     elif times == "invalid_destination":
-        speech_output = "Sorry, I don't recognize the destination {}. Please try again.".format(destination)
+        speech_output = "Sorry, I don't recognize that destination. Please try again."
     elif times == "invalid_station":
-        speech_output = "Sorry, I don't recognize the station {}. Please try again.".format(station)
+        speech_output = "Sorry, I don't recognize that station. Please try again."
     elif times == "no_intersection":
         speech_output = "Those stations don't connect. Please try again."
     elif times in ("mordor", "Mordor"):
