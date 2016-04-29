@@ -108,6 +108,7 @@ def commute_estimate(intent, session):
         station_options = get_options(station, station_data)
     destination_options = get_options(destination, station_data)
 
+    # Get travel time estimate and construct speech output
     estimate = retrieve_estimate(station_options, destination_options)
     speech_output = get_speech_output(estimate, station, destination)
     print(speech_output)
@@ -116,9 +117,13 @@ def commute_estimate(intent, session):
 
 def retrieve_estimate(station_options, destination_options):
 
+    # check for shared line between source and destination
     intersection = [x for x in station_options.keys() if x in destination_options.keys()]
+
+    # throw error if stations don't share a line
     if not intersection:
         return "no_intersection"
+    # otherwise grab station codes for source and dest on shared line and get travel estimate
     else:
         shared_line = intersection[0]
         station_code = station_options[shared_line].keys()[0]
@@ -147,22 +152,32 @@ def get_times(intent, session):
     card_title = intent['name']
     session_attributes = {}
     should_end_session = True
+
     try:
+        # Grab station info from intent
         station = intent['slots']['station']['value']
         station = get_equivalents(station)
+
+        # Grab destination info
         if len(intent['slots']['destination']) > 1:
             dest = intent['slots']['destination']['value']
             dest = get_equivalents(dest)
         else:
             dest = None
+
+        # Grab line info
         if len(intent['slots']['line']) > 1:
             line = intent['slots']['line']['value']
             line = line.split()[0]  # if line is in the form "x line", set line to x
         else:
             line = None
+
+        # retrieve train times for supplied params and construct speech output
         (times, station, destination) = query_station(station, dest, line)
         speech_output = get_speech_output(times, station, destination, line)
         reprompt_text = ""
+
+    # If a key error gets thrown above, this typically means a user specified a dest but no source.
     except KeyError:
         speech_output = ("Please specify your station of origin. For example, ask when is the next train "
                          "from Dupont circle to Shady Grove.")
@@ -175,9 +190,13 @@ def get_times(intent, session):
 def query_station(station, destination, line):
     station_data = get_stations()
     station = name_lookup(station, station_data)
+
+    # Validate supplied station
     if not station:
         return "invalid_station", station, destination
     st_options = get_options(station, station_data)
+
+    # Validate supplied line
     if line:
         try:
             st_code = st_options[line].keys()[0]
@@ -185,34 +204,44 @@ def query_station(station, destination, line):
             return "invalid_source_line", station, destination
     else:
         st_code = st_options[st_options.keys()[0]].keys()[0]
+
+    # Retrieve train times for given source station
     times = retrieve_times(st_code, line)
 
     if destination is not None:
+
+        # Validate destination
         destination = name_lookup(destination, station_data)
         if not destination:
             return "invalid_destination", station, destination
         if destination == station:
             return "same_stations", station, destination
+
         # Easter eggs
         if any(destination.lower() == x for x in ["dulles", "mordor"]):
             return destination
 
-        # Find correct farragut
+        # Check for Farragut mix-up
         if "farragut" in (station, destination):
             (station, destination) = which_farragut(station, destination, st_options, station_data)
             # recalculate station options
             st_options = get_options(station, station_data)
 
+        # Grab possible lines/st_codes for destination station
         dest_options = get_options(destination, station_data)
-        if line:
-            try:
-                dest_code = dest_options[line].keys()[0]
-            except KeyError:
-                return "invalid_dest_line", station, destination
+
+        # Check if specified line goes to destination station - if not, break
+        if line and (line not in dest_options.keys()):
+            return "invalid_dest_line", station, destination
+
+        # Find shared line between source and dest
         intersection = [x for x in st_options.keys() if x in dest_options.keys()]
 
+        # If no shared line, alert user
         if not intersection:
-            times = "no_intersection"
+            return "no_intersection", station, destination
+
+        # Otherwise calculate the trajectory and filter trains in wrong direction or which don't go far enough.
         else:
             shared_line = intersection[0]
             st_code = st_options[shared_line].keys()[0]
@@ -228,6 +257,8 @@ def query_station(station, destination, line):
 def retrieve_times(st_code, line=None):
     headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
     params = urllib.urlencode({})
+
+    # Query WMATA API
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
         conn.request("GET", "/StationPrediction.svc/json/GetPrediction/{}?{}".format(st_code, params), "{body}",
@@ -236,7 +267,10 @@ def retrieve_times(st_code, line=None):
         data = json.loads(response.read())
         conn.close()
     except:
+        # Throw error if anything at all goes wrong with get request
         return None
+
+    # Only return trains for
     if line:
         try:
             times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']

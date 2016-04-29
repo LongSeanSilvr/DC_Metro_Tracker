@@ -18,7 +18,7 @@
       "slots": {
         "line": {
           "name": "line",
-          "value": "line"
+          "value": "silver"
         },
         "link": {
           "name": "link",
@@ -26,10 +26,11 @@
         },
         "station": {
           "name": "station",
-          "value": "brown willy"
+          "value": "willy"
         },
         "destination": {
-          "name": "destination"
+          "name": "destination",
+          "value": "noma"
         },
         "towards": {
           "name": "towards"
