@@ -17,8 +17,7 @@
       "name": "GetTimes",
       "slots": {
         "line": {
-          "name": "line",
-          "value": "red"
+          "name": "line"
         },
         "link": {
           "name": "link",
@@ -26,11 +25,11 @@
         },
         "station": {
           "name": "station",
-          "value": "gallery"
+          "value": "gallery place"
         },
         "destination": {
           "name": "destination",
-          "value": "know much"
+          "value": "greenbelt"
         },
         "towards": {
           "name": "towards"
