@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.da5d6287-5a35-4635-9ca5-9c1aa6dd4e94",
+    "sessionId": "SessionId.ff386925-55e9-452d-a014-ee59d815be23",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,13 +11,14 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.dd101912-8c2c-44ad-b336-69a1cbf3f275",
-    "timestamp": "2016-04-28T22:14:01Z",
+    "requestId": "EdwRequestId.b1fc8018-68f9-4156-a0a6-a4bdbad26d82",
+    "timestamp": "2016-04-29T02:51:23Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
         "line": {
-          "name": "line"
+          "name": "line",
+          "value": "line"
         },
         "link": {
           "name": "link",
@@ -25,22 +26,19 @@
         },
         "station": {
           "name": "station",
-          "value": "noma"
+          "value": "brown willy"
         },
         "destination": {
-          "name": "destination",
-          "value": "noma"
+          "name": "destination"
         },
         "towards": {
-          "name": "towards",
-          "value": "to"
+          "name": "towards"
         },
         "prompt": {
           "name": "prompt"
         },
         "train": {
-          "name": "train",
-          "value": "train"
+          "name": "train"
         }
       }
     },
