@@ -58,7 +58,7 @@ def on_session_ended(session_ended_request, session):
 
 
 # ======================================================================================================================
-# Skill Behaviours -- Major Functions
+# Skill Behaviours
 # ======================================================================================================================
 def get_welcome_response():
     card_title = "Welcome"
@@ -98,7 +98,7 @@ def commute_estimate(intent, session):
                         "times from Dupont to Shady Grove."
         print(speech_output)
         return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, should_end_session))
+            card_title, speech_output, should_end_session))
 
     # Check for Farragut mixup
     station_options = get_options(station, station_data)
@@ -114,38 +114,6 @@ def commute_estimate(intent, session):
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session))
-
-def retrieve_estimate(station_options, destination_options):
-
-    # check for shared line between source and destination
-    intersection = [x for x in station_options.keys() if x in destination_options.keys()]
-
-    # throw error if stations don't share a line
-    if not intersection:
-        return "no_intersection"
-    # otherwise grab station codes for source and dest on shared line and get travel estimate
-    else:
-        shared_line = intersection[0]
-        station_code = station_options[shared_line].keys()[0]
-        destination_code = destination_options[shared_line].keys()[0]
-        estimate = api_estimate(station_code, destination_code)
-        return estimate
-
-def api_estimate(station_code, destination_code):
-    if station_code ==  destination_code:
-        return "same_stations"
-    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
-    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
-    try:
-        conn = httplib.HTTPSConnection('api.wmata.com')
-        conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
-        response = conn.getresponse()
-        data = json.loads(response.read())
-        conn.close()
-        commute_time = data['StationToStationInfos'][0]['RailTime']
-        return commute_time
-    except:
-        return "conn_problem"
 
 
 def get_times(intent, session):
@@ -187,6 +155,10 @@ def get_times(intent, session):
         card_title, speech_output, should_end_session, reprompt_text))
 
 
+# ======================================================================================================================
+# Suub functions for get_times()
+# ======================================================================================================================
+
 def query_station(station, destination, line):
     station_data = get_stations()
     station = name_lookup(station, station_data)
@@ -207,6 +179,8 @@ def query_station(station, destination, line):
 
     # Retrieve train times for given source station
     times = retrieve_times(st_code, line)
+    if line:
+        times = filter_times(times, station_data, line)
 
     if destination is not None:
 
@@ -249,7 +223,7 @@ def query_station(station, destination, line):
             dest_station = dest_options[shared_line].keys()[0]
             dest_index = dest_options[shared_line][dest_station]
             dest_trajectory = int(dest_index) - int(st_index)
-            times = filter_times(times, intersection, station_data, st_index, dest_trajectory)
+            times = filter_times(times, station_data, intersection, st_index, dest_trajectory)
 
     return times, station, destination
 
@@ -258,8 +232,8 @@ def retrieve_times(st_code, line=None):
     headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
     params = urllib.urlencode({})
 
-    # Query WMATA API
     try:
+        # Query WMATA API
         conn = httplib.HTTPSConnection('api.wmata.com')
         conn.request("GET", "/StationPrediction.svc/json/GetPrediction/{}?{}".format(st_code, params), "{body}",
                      headers)
@@ -270,46 +244,100 @@ def retrieve_times(st_code, line=None):
         # Throw error if anything at all goes wrong with get request
         return None
 
-    # Only return trains for
-    if line:
-        try:
-            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']
-                     if (line in code2line(train[u'Line']))]
-        except KeyError:
-            return "unknown_line"
-    else:
-        try:
-            times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
-        except KeyError:
-            return "unknown_line"
+    try:
+        times = [(code2line(train[u'Line']), train[u'DestinationName'], train[u'Min']) for train in data[u'Trains']]
+    except KeyError:
+        # Throw error if API returns a blank or wonky line that is not recognized by code2line()
+        return "unknown_line"
+
     return times
 
 
-def filter_times(times, intersection, station_data, st_index, dest_trajectory):
+def filter_times(times, station_data, lines, st_index=None, dest_trajectory=None):
     filtered_times = []
     for time in times:
         if not time[2]:
+            # skip trains with no time info
             continue
-        for line in intersection:
-            found = False
-            for code in station_data[line]:
-                if time[1].lower() == "train":
-                    target_index = "a ghost station"
-                    found = True
-                    break
-                if time[1].lower() in station_data[line][code]['Name'].lower():
-                    target_index = station_data[line][code]['line_index']
-                    found = True
-                    break
-            if found:
-                if target_index == "a ghost station":
-                    filtered_times.append(time)
-                    break
-                else:
-                    targ_trajectory = int(target_index) - int(st_index)
-                    if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
-                        filtered_times.append(time)
+        if filter_times_engine(time, station_data, lines, st_index, dest_trajectory):
+            filtered_times.append(time)
     return filtered_times
+
+
+def filter_times_engine(time, station_data, lines, st_index, dest_trajectory):
+    # Skip if train is already boarding or arriving -- unless you live in the station, you're not catching that one.
+    if time[2] in ("BRD", "ARR"):
+        return False
+    train_line = time[0].split()[0]
+
+    # Skip if train is on wrong line
+    if train_line not in lines:
+        return False
+
+    # If dest_trajectory is None, no destination is specified. In this case, skip the next steps and return True
+    if not dest_trajectory:
+        return True
+
+    # Get station code of train end point
+    st_code = None
+    for code in station_data[train_line]:
+        if time[1].lower() in station_data[train_line][code]['Name'].lower():
+            st_code = code
+            break
+
+    # Get index of train end point.
+    if time[1].lower() == "train":
+        # Return true if station is unknown, since it may be going in right direction
+        return True
+    else:
+        try:
+            target_index = station_data[train_line][st_code]['line_index']
+        except KeyError:
+            # Skip if line index is undefined for some reason
+            return False
+
+    # Compare trajectories to filter for trains in right direction and going far enough
+    targ_trajectory = int(target_index) - int(st_index)
+    if (targ_trajectory <= dest_trajectory < 0) or (0 < dest_trajectory <= targ_trajectory):
+        return True
+    else:
+        return False
+
+
+# ======================================================================================================================
+# Functions for commute_estimate()
+# ======================================================================================================================
+def retrieve_estimate(station_options, destination_options):
+    # check for shared line between source and destination
+    intersection = [x for x in station_options.keys() if x in destination_options.keys()]
+
+    # throw error if stations don't share a line
+    if not intersection:
+        return "no_intersection"
+    # otherwise grab station codes for source and dest on shared line and get travel estimate
+    else:
+        shared_line = intersection[0]
+        station_code = station_options[shared_line].keys()[0]
+        destination_code = destination_options[shared_line].keys()[0]
+        estimate = api_estimate(station_code, destination_code)
+        return estimate
+
+
+def api_estimate(station_code, destination_code):
+    if station_code == destination_code:
+        return "same_stations"
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
+    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
+    try:
+        conn = httplib.HTTPSConnection('api.wmata.com')
+        conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
+        response = conn.getresponse()
+        data = json.loads(response.read())
+        conn.close()
+        commute_time = data['StationToStationInfos'][0]['RailTime']
+        return commute_time
+    except:
+        return "conn_problem"
 
 
 # ======================================================================================================================
@@ -433,9 +461,64 @@ def get_equivalents(station):
         station = "smithsonian"
     if "dallas" in station.lower():
         station = "dulles"
-    if any(station.lower() == x for x in ["know my", "number", "know muh", "no my", "know much"]):
+    if station.lower() in ("know my", "number", "know muh", "no my", "know much"):
         station = "noma"
     return station
+
+
+def get_speech_output(flag, station, destination, line=None):
+    if flag is None:
+        speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
+    elif line == "line":
+        speech_output = "sorry, I don't recognize that line."
+    elif flag == "unknown_station":
+        speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
+    elif flag == "invalid_destination":
+        speech_output = "Sorry, I don't recognize that destination."
+    elif flag == "invalid_station":
+        speech_output = "Sorry, I don't recognize that station."
+    elif flag == "invalid_source_line":
+        speech_output = "Sorry, {} does not service {} line trains.".format(station, line)
+    elif flag == "invalid_dest_line":
+        speech_output = "Sorry, {} does not service {} line trains.".format(destination, line)
+    elif flag == "no_intersection":
+        speech_output = "Those stations don't connect."
+    elif flag in ("mordor", "Mordor"):
+        speech_output = "One does not simply metro to Mordor."
+    elif flag in ("dulles", "Dulles"):
+        speech_output = "One does not simply metro to dulles."
+    elif flag == "conn_problem":
+        speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
+    elif flag == "same_stations":
+        speech_output = "Those stations are the same you silly goose!"
+    elif isinstance(flag, int):
+        if flag == 1:
+            speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
+        else:
+            speech_output = "The current travel time between {} and {} is {} minutes.".format(station, destination,
+                                                                                              flag)
+    elif isinstance(flag, list):
+        str_time = format_time(flag)
+        if str_time:
+            speech_output = "there is {}".format(str_time)
+        else:
+            if line:
+                if "line" not in line:
+                    line += " line"
+                if destination:
+                    speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station,
+                                                                                                       destination)
+                else:
+                    speech_output = "There are currently no {} trains scheduled for {}.".format(line, station)
+            else:
+                if destination:
+                    speech_output = "There are currently no trains scheduled from {} to {}.".format(station,
+                                                                                                    destination)
+                else:
+                    speech_output = "There are currently no trains scheduled for {}.".format(station)
+    else:
+        speech_output = "Hmm. I seem to have encountered an internal error. Please try your request again."
+    return speech_output
 
 
 def format_time(times):
@@ -474,63 +557,10 @@ def format_time(times):
 
     # remove comma from end of line and replace with period.
     if response:
-        stringt = response[:-1]
-        stringt += "."
+        response = response[:-2]
+        response += "."
 
     return response
-
-
-def get_speech_output(flag, station, destination, line=None):
-    if flag is None:
-        speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
-    elif line == "line":
-        speech_output = "sorry, I don't recognize that line."
-    elif flag == "unknown_station":
-        speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
-    elif flag == "invalid_destination":
-        speech_output = "Sorry, I don't recognize that destination."
-    elif flag == "invalid_station":
-        speech_output = "Sorry, I don't recognize that station."
-    elif flag == "invalid_source_line":
-        speech_output = "Sorry, {} does not service {} line trains.".format(station, line)
-    elif flag == "invalid_dest_line":
-        speech_output = "Sorry, {} does not service {} line trains.".format(destination, line)
-    elif flag == "no_intersection":
-        speech_output = "Those stations don't connect."
-    elif flag in ("mordor", "Mordor"):
-        speech_output = "One does not simply metro to Mordor."
-    elif flag in ("dulles", "Dulles"):
-        speech_output = "One does not simply metro to dulles."
-    elif flag == "conn_problem":
-        speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
-    elif flag == "same_stations":
-        speech_output = "Those are the same stations you silly goose!"
-    elif isinstance(flag, int):
-        if flag == 1:
-            speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
-        else:
-            speech_output ="The current travel time between {} and {} is {} minutes.".format(station, destination, flag)
-    else:
-        str_time = format_time(flag)
-        if str_time:
-            speech_output = "there is {}".format(str_time)
-        else:
-            if line:
-                if "line" not in line:
-                    line += " line"
-                if destination:
-                    speech_output = "There are currently no {} trains scheduled from {} to {}.".format(line, station,
-                                                                                                   destination)
-                else:
-                    speech_output = "There are currently no {} trains scheduled for {}.".format(line, station)
-            else:
-                if destination:
-                    speech_output = "There are currently no trains scheduled from {} to {}.".format(station,
-                                                                                                   destination)
-                else:
-                    speech_output = "There are currently no trains scheduled for {}.".format(station)
-
-    return speech_output
 
 
 # ======================================================================================================================
@@ -566,7 +596,7 @@ def build_response(session_attributes, speechlet_response):
 
 
 # ======================================================================================================================
-# Run if invoked
+# Run if invoked directly
 # ======================================================================================================================
 if __name__ == "__main__":
     with open("test_event.json", "rb") as f:
