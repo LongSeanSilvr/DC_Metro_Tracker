@@ -48,6 +48,8 @@ def on_intent(intent_request, session):
         return get_times(intent, session)
     elif intent_name == "CommuteEstimate":
         return commute_estimate(intent, session)
+    elif intent_name == "Incidents":
+        return get_incidents(intent, session)
     else:
         raise ValueError("Invalid intent")
 
@@ -58,7 +60,7 @@ def on_session_ended(session_ended_request, session):
 
 
 # ======================================================================================================================
-# Skill Behaviours
+# Skill Behavior: Welcome Response
 # ======================================================================================================================
 def get_welcome_response():
     card_title = "Welcome"
@@ -71,6 +73,9 @@ def get_welcome_response():
         card_title, speech_output, should_end_session, reprompt_text))
 
 
+# ======================================================================================================================
+# Skill Intent: Commute Estimate
+# ======================================================================================================================
 def commute_estimate(intent, session):
     card_title = "commute_estimate"
     should_end_session = True
@@ -116,6 +121,42 @@ def commute_estimate(intent, session):
         card_title, speech_output, should_end_session))
 
 
+def retrieve_estimate(station_options, destination_options):
+    # check for shared line between source and destination
+    intersection = [x for x in station_options.keys() if x in destination_options.keys()]
+
+    # throw error if stations don't share a line
+    if not intersection:
+        return "no_intersection"
+    # otherwise grab station codes for source and dest on shared line and get travel estimate
+    else:
+        shared_line = intersection[0]
+        station_code = station_options[shared_line].keys()[0]
+        destination_code = destination_options[shared_line].keys()[0]
+        estimate = api_estimate(station_code, destination_code)
+        return estimate
+
+
+def api_estimate(station_code, destination_code):
+    if station_code == destination_code:
+        return "same_stations"
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
+    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
+    try:
+        conn = httplib.HTTPSConnection('api.wmata.com')
+        conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
+        response = conn.getresponse()
+        data = json.loads(response.read())
+        conn.close()
+        commute_time = data['StationToStationInfos'][0]['RailTime']
+        return commute_time
+    except:
+        return "conn_problem"
+
+
+# ======================================================================================================================
+# Skill Intent: Get Times
+# ======================================================================================================================
 def get_times(intent, session):
     card_title = intent['name']
     session_attributes = {}
@@ -155,10 +196,6 @@ def get_times(intent, session):
         card_title, speech_output, should_end_session, reprompt_text))
 
 
-# ======================================================================================================================
-# Suub functions for get_times()
-# ======================================================================================================================
-
 def query_station(station, destination, line):
     station_data = get_stations()
     station = name_lookup(station, station_data)
@@ -184,16 +221,16 @@ def query_station(station, destination, line):
 
     if destination is not None:
 
+        # Easter eggs
+        if any(destination.lower() == x for x in ["dulles", "mordor"]):
+            return destination, station, destination
+
         # Validate destination
         destination = name_lookup(destination, station_data)
         if not destination:
             return "invalid_destination", station, destination
         if destination == station:
             return "same_stations", station, destination
-
-        # Easter eggs
-        if any(destination.lower() == x for x in ["dulles", "mordor"]):
-            return destination
 
         # Check for Farragut mix-up
         if "farragut" in (station, destination):
@@ -256,15 +293,16 @@ def retrieve_times(st_code, line=None):
 def filter_times(times, station_data, lines, st_index=None, dest_trajectory=None):
     filtered_times = []
     for time in times:
-        if not time[2]:
-            # skip trains with no time info
-            continue
         if filter_times_engine(time, station_data, lines, st_index, dest_trajectory):
             filtered_times.append(time)
     return filtered_times
 
 
 def filter_times_engine(time, station_data, lines, st_index, dest_trajectory):
+    # skip trains with no time info
+    if not time[2]:
+        return False
+
     # Skip if train is already boarding or arriving -- unless you live in the station, you're not catching that one.
     if time[2] in ("BRD", "ARR"):
         return False
@@ -305,43 +343,44 @@ def filter_times_engine(time, station_data, lines, st_index, dest_trajectory):
 
 
 # ======================================================================================================================
-# Functions for commute_estimate()
+# Skill Intent: Get Incidents
 # ======================================================================================================================
-def retrieve_estimate(station_options, destination_options):
-    # check for shared line between source and destination
-    intersection = [x for x in station_options.keys() if x in destination_options.keys()]
-
-    # throw error if stations don't share a line
-    if not intersection:
-        return "no_intersection"
-    # otherwise grab station codes for source and dest on shared line and get travel estimate
+def get_incidents(intent, session):
+    session_attributes = {}
+    should_end_session = True
+    card_title = "Incident Report"
+    reprompt_text = "Ask about incidents or alerts for a particular station"
+    incident_data = incidents_from_api()
+    if incident_data is None:
+        speech_output = get_speech_output("conn_problem")
+    elif not incident_data['Incidents']:
+        speech_output = get_speech_output("no_incidents")
     else:
-        shared_line = intersection[0]
-        station_code = station_options[shared_line].keys()[0]
-        destination_code = destination_options[shared_line].keys()[0]
-        estimate = api_estimate(station_code, destination_code)
-        return estimate
+        for incident in incident_data['Incidents']:
+            description = incident['Description']
+            print(description)
+        speech_output = "there are some incidents"
+    print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
 
 
-def api_estimate(station_code, destination_code):
-    if station_code == destination_code:
-        return "same_stations"
+def incidents_from_api():
     headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
-    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
+    params = urllib.urlencode({})
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
-        conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
+        conn.request("GET", "/Incidents.svc/json/Incidents?%s" % params, "{body}", headers)
         response = conn.getresponse()
         data = json.loads(response.read())
         conn.close()
-        commute_time = data['StationToStationInfos'][0]['RailTime']
-        return commute_time
-    except:
-        return "conn_problem"
+    except Exception as e:
+        return None
+    return data
 
 
 # ======================================================================================================================
-# Auxiliary and minor Functions
+# Auxiliary and Shared Functions
 # ======================================================================================================================
 def which_farragut(station, destination, st_options, station_data):
     if "farragut" in destination:
@@ -466,7 +505,7 @@ def get_equivalents(station):
     return station
 
 
-def get_speech_output(flag, station, destination, line=None):
+def get_speech_output(flag, station=None, destination=None, line=None):
     if flag is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
     elif line == "line":
@@ -491,6 +530,8 @@ def get_speech_output(flag, station, destination, line=None):
         speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
     elif flag == "same_stations":
         speech_output = "Those stations are the same you silly goose!"
+    elif flag == "no_incidents":
+        speech_output = "There are no incidents or alerts currently listed."
     elif isinstance(flag, int):
         if flag == 1:
             speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
