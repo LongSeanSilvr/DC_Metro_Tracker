@@ -6,6 +6,7 @@ from __future__ import print_function
 import httplib
 import urllib
 import json
+import re
 
 
 # ======================================================================================================================
@@ -350,16 +351,65 @@ def get_incidents(intent, session):
     should_end_session = True
     card_title = "Incident Report"
     reprompt_text = "Ask about incidents or alerts for a particular station"
+
     incident_data = incidents_from_api()
+
     if incident_data is None:
         speech_output = get_speech_output("conn_problem")
     elif not incident_data['Incidents']:
         speech_output = get_speech_output("no_incidents")
     else:
-        for incident in incident_data['Incidents']:
-            description = incident['Description']
-            print(description)
-        speech_output = "there are some incidents"
+        events = []
+        try:
+            type = intent['slots']['incidenttype']['value']
+        except:
+            type = "incidents"
+
+        if len(intent['slots']['line']) > 1:
+            line = intent['slots']['line']['value']
+
+            if type.lower() in "incidents":
+                for incident in incident_data['Incidents']:
+                    affected_lines = incident["LinesAffected"].split(";")
+                    for affected_line in affected_lines:
+                        if affected_line and (line in code2line(affected_line)):
+                            description = incident['Description']
+                            events.append(description)
+                            break
+            else:
+                for incident in incident_data['Incidents']:
+                    if incident['IncidentType'].lower() in type:
+                        affected_lines = incident["LinesAffected"].split(";")
+                        for affected_line in affected_lines:
+                            if affected_line and (line in code2line(affected_line)):
+                                description = incident['Description']
+                                events.append(description)
+                                break
+        else:
+            for incident in incident_data['Incidents']:
+                if type in 'incidents':
+                    description = incident['Description']
+                    events.append(description)
+                else:
+                    if incident['IncidentType'].lower() in type:
+                        description = incident['Description']
+                        events.append(description)
+        speech_output = " ".join(events)
+
+        if not speech_output:
+            if len(intent['slots']['line']) > 1:
+                if "line" not in line:
+                    line += " line"
+                speech_output = "There are  currently no {} listed for the {}".format(type, line)
+            else:
+                speech_output = "There are currently no {} listed.".format(type)
+
+    speech_output = speech_output.replace(r'&', 'and')
+    speech_output = speech_output.replace(r'btwn', 'between')
+    speech_output = re.sub(r'\balt\b', 'alternative', speech_output)
+    speech_output = re.sub(r'\bmin\b', 'minutes', speech_output)
+    speech_output = re.sub(r'\w+ Line: ', '', speech_output)
+    speech_output = speech_output.replace(r':', ',')
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))

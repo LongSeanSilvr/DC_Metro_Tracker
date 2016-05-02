@@ -1,0 +1,79 @@
+{
+  "intents": [
+    {
+      "intent": "GetTimes",
+      "slots": [
+        {
+          "name": "prompt",
+          "type": "LIST_OF_PROMPTS"
+        },
+        {
+          "name": "link",
+          "type": "LIST_OF_LINKS"
+        },
+        {
+          "name": "towards",
+          "type": "LIST_OF_TOWARDS"
+        },
+        {
+          "name": "train",
+          "type": "LIST_OF_TRAINS"
+        },
+        {
+          "name": "station",
+          "type": "LIST_OF_STATIONS"
+        },
+        {
+          "name": "line",
+          "type": "LIST_OF_LINES"
+        },
+        {
+          "name": "destination",
+          "type": "LIST_OF_STATIONS"
+        }
+      ]
+    },
+    {
+      "intent": "CommuteEstimate",
+      "slots": [
+        {
+          "name": "commprompt",
+          "type": "LIST_OF_COMM_PROMPTS"
+        },
+        {
+          "name": "commlink",
+          "type": "LIST_OF_COMM_LINKS"
+        },
+        {
+          "name": "commto",
+          "type": "LIST_OF_COMM_TO"
+        },
+        {
+          "name": "source",
+          "type": "LIST_OF_STATIONS"
+        },
+        {
+          "name": "destination",
+          "type": "LIST_OF_STATIONS"
+        }
+      ]
+    },
+        {
+      "intent": "Incidents",
+      "slots": [
+        {
+          "name": "indidentprompt",
+          "type": "LIST_OF_INC_PROMPTS"
+        },
+        {
+          "name": "line",
+          "type": "LIST_OF_LINES"
+        },
+        {
+          "name": "incidenttype",
+          "type": "LIST_OF_TYPES"
+        }
+      ]
+    }
+  ]
+}

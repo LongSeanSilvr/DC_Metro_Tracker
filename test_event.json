@@ -1,44 +1,32 @@
 {
   "session": {
-    "sessionId": "SessionId.ff386925-55e9-452d-a014-ee59d815be23",
+    "sessionId": "SessionId.f8646bfc-d4fd-4c1d-b49c-61611e6257e1",
     "application": {
-      "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
+      "applicationId": "amzn1.echo-sdk-ams.app.5bfd0102-5764-4a9b-a29d-eb031aedd834"
     },
     "user": {
-      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNBO5YCT4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAEB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5MOBPSHZED5STTJ2PCOQEVNVJRQ"
+      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QH3FLZVM7XHMNEB4ZM2XB36QU7CW4QGU6AH5E52ELO4Y7V6HNVEZSUIEMVN4IBYAG47HY73FURTOTARJNKO5CKHAF7HLHPZJZ7R24YGZ5JTF5OHPHPB53HGTXTHOSFCY3Q2XN5GFKUSKOJWSX3TMIJPWN5HI"
     },
     "new": true
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.b1fc8018-68f9-4156-a0a6-a4bdbad26d82",
-    "timestamp": "2016-04-29T02:51:23Z",
+    "requestId": "EdwRequestId.cc48e119-fd12-43a0-9e6f-29b687e07149",
+    "timestamp": "2016-05-02T00:36:00Z",
     "intent": {
-      "name": "GetTimes",
+      "name": "Incidents",
       "slots": {
+        "incidentprompt": {
+          "name": "incidentprompt",
+          "value": "if there are any"
+        },
         "line": {
-          "name": "line"
+          "name": "line",
+          "value": "red line"
         },
-        "link": {
-          "name": "link",
-          "value": "from"
-        },
-        "station": {
-          "name": "station",
-          "value": "gallery place"
-        },
-        "destination": {
-          "name": "destination",
-          "value": "mordor"
-        },
-        "towards": {
-          "name": "towards"
-        },
-        "prompt": {
-          "name": "prompt"
-        },
-        "train": {
-          "name": "train"
+        "incidenttype": {
+          "name": "incidenttype",
+          "value": "delays"
         }
       }
     },
