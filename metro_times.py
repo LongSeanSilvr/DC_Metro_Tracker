@@ -58,6 +58,10 @@ def on_intent(intent_request, session):
         return update_home(intent, session, )
     elif intent_name == "GetHome":
         return get_home(intent, session)
+    elif intent_name == "Help":
+        return help_response()
+    elif intent_name == "Stop":
+        return exit_app()
     else:
         raise ValueError("Invalid intent")
 
@@ -519,6 +523,31 @@ def get_home(intent, session):
                        "set my home station to Metro Center."
 
     print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
+
+
+# ======================================================================================================================
+# Skill Intent: query home station
+# ======================================================================================================================
+def help_response():
+    card_title = "Help"
+    session_attributes = {}
+    should_end_session = False
+    reprompt_text = ""
+    speech_output = "To get metro times, say something like: 'when's the next train from Metro center to Brookland'"
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
+
+# ======================================================================================================================
+# Skill Intent: query home station
+# ======================================================================================================================
+def exit_app():
+    card_title = "Exiting"
+    session_attributes = {}
+    should_end_session = False
+    reprompt_text = ""
+    speech_output = "Thank you for using MetroTracker! Goodbye."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
