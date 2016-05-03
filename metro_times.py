@@ -14,7 +14,6 @@ import boto3
 # Handler
 # ======================================================================================================================
 def lambda_handler(event, context=None):
-
     print("event.session.application.applicationId=" +
           event['session']['application']['applicationId'])
 
@@ -57,10 +56,10 @@ def on_intent(intent_request, session):
     elif intent_name == "UpdateHome":
         return update_home(intent, session, )
     elif intent_name == "GetHome":
-        return get_home(intent, session)
+        return get_home(session)
     elif intent_name == "Help":
         return help_response()
-    elif intent_name == "Stop":
+    elif intent_name == "Exit":
         return exit_app()
     else:
         raise ValueError("Invalid intent")
@@ -107,7 +106,7 @@ def commute_estimate(intent, session):
                 speech_output = get_speech_output("no_home")
                 print(speech_output)
                 return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
-                                                                               should_end_session))
+                                                                                   should_end_session))
 
         station = station_lookup(st, station_data, home)
 
@@ -174,8 +173,8 @@ def retrieve_estimate(station_options, destination_options):
 def api_estimate(station_code, destination_code):
     if station_code == destination_code:
         return "same_stations"
-    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
-    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b', }
+    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code, })
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
         conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
@@ -257,7 +256,7 @@ def query_station(station, destination, line, home):
         st_code = st_options[st_options.keys()[0]].keys()[0]
 
     # Retrieve train times for given source station
-    times = retrieve_times(st_code, line)
+    times = retrieve_times(st_code)
     if line:
         times = filter_times(times, station_data, line)
 
@@ -307,8 +306,8 @@ def query_station(station, destination, line, home):
     return times, station, destination
 
 
-def retrieve_times(st_code, line=None):
-    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
+def retrieve_times(st_code):
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b', }
     params = urllib.urlencode({})
 
     try:
@@ -457,7 +456,7 @@ def incidents_from_api():
         response = conn.getresponse()
         data = json.loads(response.read())
         conn.close()
-    except Exception as e:
+    except Exception:
         return None
     return data
 
@@ -484,15 +483,14 @@ def update_home(intent, session):
 
     home = intent['slots']['home']['value']
     home = essentialize_station_name(home)
-    home = station_lookup(home, station_data)
+    home = station_lookup(home, station_data, home)
 
     client = boto3.client('dynamodb')
 
     try:
-        client.update_item(TableName='metro_times_user_ids', Key={'user_id':{'S':user_id}},
-                           ExpressionAttributeValues={ ":home":{"S":home}}, UpdateExpression='SET home = :home')
-    except Exception, e:
-        print (e)
+        client.update_item(TableName='metro_times_user_ids', Key={'user_id': {'S': user_id}},
+                           ExpressionAttributeValues={":home": {"S": home}}, UpdateExpression='SET home = :home')
+    except Exception:
         speech_output = "Sorry, I was unable to set your home station."
         print(speech_output)
         return build_response(session_attributes, build_speechlet_response(
@@ -507,7 +505,7 @@ def update_home(intent, session):
 # ======================================================================================================================
 # Skill Intent: query home station
 # ======================================================================================================================
-def get_home(intent, session):
+def get_home(session):
     card_title = "home station"
     should_end_session = True
     session_attributes = {}
@@ -519,8 +517,8 @@ def get_home(intent, session):
     if home is not None:
         speech_output = "Your home station is currently set to {}".format(home)
     else:
-        speech_output= "You currently do not have a home station set. To set a home station, say something like " \
-                       "set my home station to Metro Center."
+        speech_output = "You currently do not have a home station set. To set a home station, say something like " \
+                        "set my home station to Metro Center."
 
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
@@ -528,19 +526,21 @@ def get_home(intent, session):
 
 
 # ======================================================================================================================
-# Skill Intent: query home station
+# Skill Intent: Help
 # ======================================================================================================================
 def help_response():
     card_title = "Help"
     session_attributes = {}
     should_end_session = False
     reprompt_text = ""
-    speech_output = "To get metro times, say something like: 'when's the next train from Metro center to Brookland'"
+    speech_output = "To get metro times, say something like: 'when's the next train from Metro center to Brookland.'" \
+                    "To set your home station, say something like 'set my home station to Metro Center.'"
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
+
 # ======================================================================================================================
-# Skill Intent: query home station
+# Skill Intent: Quit
 # ======================================================================================================================
 def exit_app():
     card_title = "Exiting"
@@ -550,6 +550,7 @@ def exit_app():
     speech_output = "Thank you for using MetroTracker! Goodbye."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
+
 
 # ======================================================================================================================
 # Auxiliary and Shared Functions
@@ -589,7 +590,7 @@ def get_stations():
 
 def station_lookup(station, station_data, home):
     name = ""
-    if station.lower() in ("here","home","my home"):
+    if station.lower() in ("here", "home", "my home"):
         return home
     for line in station_data:
         for code in station_data[line]:
@@ -626,8 +627,8 @@ def code2line(line, reverse=False):
 def lookup_home(user):
     client = boto3.client('dynamodb')
     try:
-        home_item = client.get_item(TableName='metro_times_user_ids', Key={'user_id':{'S':user}},
-                           ProjectionExpression="home")
+        home_item = client.get_item(TableName='metro_times_user_ids', Key={'user_id': {'S': user}},
+                                    ProjectionExpression="home")
         home = home_item['Item']['home']['S']
     except Exception:
         home = None
