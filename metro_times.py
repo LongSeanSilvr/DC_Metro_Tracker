@@ -7,19 +7,22 @@ import httplib
 import urllib
 import json
 import re
+import boto3
 
 
 # ======================================================================================================================
 # Handler
 # ======================================================================================================================
 def lambda_handler(event, context=None):
+
     print("event.session.application.applicationId=" +
           event['session']['application']['applicationId'])
 
+    # Call on_session_started if new
     if event['session']['new']:
         on_session_started({'requestId': event['request']['requestId']},
                            event['session'])
-
+    # Request Types
     if event['request']['type'] == "LaunchRequest":
         return on_launch(event['request'], event['session'])
     elif event['request']['type'] == "IntentRequest":
@@ -51,6 +54,10 @@ def on_intent(intent_request, session):
         return commute_estimate(intent, session)
     elif intent_name == "Incidents":
         return get_incidents(intent, session)
+    elif intent_name == "UpdateHome":
+        return update_home(intent, session, )
+    elif intent_name == "GetHome":
+        return get_home(intent, session)
     else:
         raise ValueError("Invalid intent")
 
@@ -83,25 +90,47 @@ def commute_estimate(intent, session):
     session_attributes = {}
     station_data = get_stations()
 
-    # Validate that user has given a source and destination, and that they are recognized stations
+    user_id = session['user']['userId']
+    home = lookup_home(user_id)
+
+    # Validate that user has given a recognized source station. If not, set to home
     try:
-        st = get_equivalents(intent['slots']['source']['value'])
-        station = name_lookup(st, station_data)
+        st = essentialize_station_name(intent['slots']['source']['value'])
+        if st == "home":
+            if home:
+                st = home
+            else:
+                speech_output = get_speech_output("no_home")
+                print(speech_output)
+                return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
+                                                                               should_end_session))
+
+        station = station_lookup(st, station_data, home)
+
         if not station:
             speech_output = "Sorry, I don't recognize station {}.".format(st)
             print(speech_output)
             return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
                                                                                should_end_session))
-        dst = get_equivalents(intent['slots']['destination']['value'])
-        destination = name_lookup(dst, station_data)
+    except KeyError:
+        if home:
+            station = home
+        else:
+            speech_output = get_speech_output("no_origin")
+            print(speech_output)
+            return build_response(session_attributes, build_speechlet_response(
+                card_title, speech_output, should_end_session))
+
+    try:
+        dst = essentialize_station_name(intent['slots']['destination']['value'])
+        destination = station_lookup(dst, station_data, home)
         if not destination:
             speech_output = "Sorry, I don't recognize station {}.".format(dst)
             print(speech_output)
             return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
                                                                                should_end_session))
     except KeyError:
-        speech_output = "To get travel times, you must specify an origin and a destination. For example, Say travel " \
-                        "times from Dupont to Shady Grove."
+        speech_output = get_speech_output("no_destination")
         print(speech_output)
         return build_response(session_attributes, build_speechlet_response(
             card_title, speech_output, should_end_session))
@@ -162,44 +191,52 @@ def get_times(intent, session):
     card_title = intent['name']
     session_attributes = {}
     should_end_session = True
+    reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
+
+    user_id = session['user']['userId']
+    home = lookup_home(user_id)
 
     try:
         # Grab station info from intent
         station = intent['slots']['station']['value']
-        station = get_equivalents(station)
-
-        # Grab destination info
-        if len(intent['slots']['destination']) > 1:
-            dest = intent['slots']['destination']['value']
-            dest = get_equivalents(dest)
+        station = essentialize_station_name(station)
+    except:
+        # if no station specified, treat home as origin point if user has set a home station
+        if home:
+            station = home
+        # otherwise, throw an error about supplying an origin.
         else:
-            dest = None
+            speech_output = get_speech_output("no_origin")
+            return build_response(session_attributes, build_speechlet_response(
+                card_title, speech_output, should_end_session, reprompt_text))
 
-        # Grab line info
-        if len(intent['slots']['line']) > 1:
-            line = intent['slots']['line']['value']
-            line = line.split()[0]  # if line is in the form "x line", set line to x
-        else:
-            line = None
+    # Grab destination info
+    if len(intent['slots']['destination']) > 1:
+        dest = intent['slots']['destination']['value']
+        dest = essentialize_station_name(dest)
+    else:
+        dest = None
 
-        # retrieve train times for supplied params and construct speech output
-        (times, station, destination) = query_station(station, dest, line)
-        speech_output = get_speech_output(times, station, destination, line)
-        reprompt_text = ""
+    # Grab line info
+    if len(intent['slots']['line']) > 1:
+        line = intent['slots']['line']['value']
+        line = line.split()[0]  # if line is in the form "x line", set line to x
+    else:
+        line = None
 
-    # If a key error gets thrown above, this typically means a user specified a dest but no source.
-    except KeyError:
-        speech_output = ("Please specify your station of origin. For example, ask when is the next train "
-                         "from Dupont circle to Shady Grove.")
-        reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
+    # retrieve train times for supplied params and construct speech output
+    (times, station, destination) = query_station(station, dest, line, home)
+    speech_output = get_speech_output(times, station, destination, line)
+    reprompt_text = ""
+
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
 
-def query_station(station, destination, line):
+def query_station(station, destination, line, home):
     station_data = get_stations()
-    station = name_lookup(station, station_data)
+    station = station_lookup(station, station_data, home)
 
     # Validate supplied station
     if not station:
@@ -227,7 +264,7 @@ def query_station(station, destination, line):
             return destination, station, destination
 
         # Validate destination
-        destination = name_lookup(destination, station_data)
+        destination = station_lookup(destination, station_data, home)
         if not destination:
             return "invalid_destination", station, destination
         if destination == station:
@@ -370,21 +407,13 @@ def get_incidents(intent, session):
 
             if type.lower() in "incidents":
                 for incident in incident_data['Incidents']:
-                    affected_lines = incident["LinesAffected"].split(";")
-                    for affected_line in affected_lines:
-                        if affected_line and (line in code2line(affected_line)):
-                            description = incident['Description']
-                            events.append(description)
-                            break
+                    description = inc_line_filter(incident, line)
+                    events.append(description)
             else:
                 for incident in incident_data['Incidents']:
                     if incident['IncidentType'].lower() in type:
-                        affected_lines = incident["LinesAffected"].split(";")
-                        for affected_line in affected_lines:
-                            if affected_line and (line in code2line(affected_line)):
-                                description = incident['Description']
-                                events.append(description)
-                                break
+                        description = inc_line_filter(incident, line)
+                        events.append(description)
         else:
             for incident in incident_data['Incidents']:
                 if type in 'incidents':
@@ -429,6 +458,70 @@ def incidents_from_api():
     return data
 
 
+def inc_line_filter(incident, line):
+    affected_lines = incident["LinesAffected"].split(";")
+    for affected_line in affected_lines:
+        if affected_line and (line in code2line(affected_line)):
+            description = incident['Description']
+            return description
+
+
+# ======================================================================================================================
+# Skill Intent: Update Home station
+# ======================================================================================================================
+def update_home(intent, session):
+    card_title = "Updating Home Station"
+    should_end_session = True
+    session_attributes = {}
+    reprompt_text = "to update your home station say, for example, set my home station to Dupont Circle"
+
+    station_data = get_stations()
+    user_id = session['user']['userId']
+
+    home = intent['slots']['home']['value']
+    home = essentialize_station_name(home)
+    home = station_lookup(home, station_data)
+
+    client = boto3.client('dynamodb')
+
+    try:
+        client.update_item(TableName='metro_times_user_ids', Key={'user_id':{'S':user_id}},
+                           ExpressionAttributeValues={ ":home":{"S":home}}, UpdateExpression='SET home = :home')
+    except Exception, e:
+        print (e)
+        speech_output = "Sorry, I was unable to set your home station."
+        print(speech_output)
+        return build_response(session_attributes, build_speechlet_response(
+            card_title, speech_output, should_end_session, reprompt_text))
+
+    speech_output = "OK, updated your home station to {}".format(home)
+    print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
+
+
+# ======================================================================================================================
+# Skill Intent: query home station
+# ======================================================================================================================
+def get_home(intent, session):
+    card_title = "home station"
+    should_end_session = True
+    session_attributes = {}
+    reprompt_text = "to get your home station say what is my home station"
+
+    user_id = session['user']['userId']
+    home = lookup_home(user_id)
+
+    if home is not None:
+        speech_output = "Your home station is currently set to {}".format(home)
+    else:
+        speech_output= "You currently do not have a home station set. To set a home station, say something like " \
+                       "set my home station to Metro Center."
+
+    print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
+
 # ======================================================================================================================
 # Auxiliary and Shared Functions
 # ======================================================================================================================
@@ -465,8 +558,10 @@ def get_stations():
     return station_data
 
 
-def name_lookup(station, station_data):
+def station_lookup(station, station_data, home):
     name = ""
+    if station.lower() in ("here","home","my home"):
+        return home
     for line in station_data:
         for code in station_data[line]:
             if station.lower() in station_data[line][code]['Name'].lower():
@@ -499,7 +594,19 @@ def code2line(line, reverse=False):
     return code
 
 
-def get_equivalents(station):
+def lookup_home(user):
+    client = boto3.client('dynamodb')
+    try:
+        home_item = client.get_item(TableName='metro_times_user_ids', Key={'user_id':{'S':user}},
+                           ProjectionExpression="home")
+        home = home_item['Item']['home']['S']
+    except Exception:
+        home = None
+
+    return home
+
+
+def essentialize_station_name(station):
     if any(name in station.lower() for name in ["gallery", "china"]):
         station = "gallery"
     if "king st" in station.lower():
@@ -550,6 +657,8 @@ def get_equivalents(station):
         station = "smithsonian"
     if "dallas" in station.lower():
         station = "dulles"
+    if "airport" in station.lower():
+        station = "airport"
     if station.lower() in ("know my", "number", "know muh", "no my", "know much"):
         station = "noma"
     return station
@@ -562,6 +671,15 @@ def get_speech_output(flag, station=None, destination=None, line=None):
         speech_output = "sorry, I don't recognize that line."
     elif flag == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
+    elif flag == "no_origin":
+        speech_output = "Sorry, you must either specify an origin station or set a default home station. " \
+                        "To set a default home station say, for example, set my home station to Dupont Circle."
+    elif flag == "no_destination":
+        speech_output = "To get travel times, you must specify a destination. For example, Say travel " \
+                        "times from Dupont to Shady Grove."
+    elif flag == "no_home":
+        speech_output = "You don't currently have a home station set. To set a home station say, for example, " \
+                        "Alexa, ask metro times to set my home station to Dupont Circle."
     elif flag == "invalid_destination":
         speech_output = "Sorry, I don't recognize that destination."
     elif flag == "invalid_station":
@@ -665,8 +783,8 @@ def build_speechlet_response(title, output, should_end_session, reprompt_text=""
         },
         'card': {
             'type': 'Simple',
-            'title': 'SessionSpeechlet - ' + title,
-            'content': 'SessionSpeechlet - ' + output
+            'title': title,
+            'content': output
         },
         'reprompt': {
             'outputSpeech': {
