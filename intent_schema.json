@@ -74,6 +74,15 @@
           "type": "LIST_OF_TYPES"
         }
       ]
+    },
+        {
+      "intent": "UpdateHome",
+      "slots": [
+        {
+          "name": "home",
+          "type": "LIST_OF_STATIONS"
+        }
+      ]
     }
   ]
 }

@@ -5,7 +5,8 @@
       "applicationId": "amzn1.echo-sdk-ams.app.5bfd0102-5764-4a9b-a29d-eb031aedd834"
     },
     "user": {
-      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QH3FLZVM7XHMNEB4ZM2XB36QU7CW4QGU6AH5E52ELO4Y7V6HNVEZSUIEMVN4IBYAG47HY73FURTOTARJNKO5CKHAF7HLHPZJZ7R24YGZ5JTF5OHPHPB53HGTXTHOSFCY3Q2XN5GFKUSKOJWSX3TMIJPWN5HI"
+      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QH3FLZVM7XHMNEB4ZM2XB36QU7CW4QGU6AH5E52ELO4Y7V6HNVEZSUIEMVN4IBYAG47HY73FURTOTARJNKO5CKHAF7HLHPZJZ7R24YGZ5JTF5OHPHPB53HGTXTHOSFCY3Q2XN5GFKUSKOJWSX3TMIJPWN5HI",
+      "userId1": "test"
     },
     "new": true
   },
@@ -14,19 +15,22 @@
     "requestId": "EdwRequestId.cc48e119-fd12-43a0-9e6f-29b687e07149",
     "timestamp": "2016-05-02T00:36:00Z",
     "intent": {
-      "name": "Incidents",
+      "name": "CommuteEstimate",
       "slots": {
-        "incidentprompt": {
-          "name": "incidentprompt",
-          "value": "if there are any"
+        "home": {
+          "name": "home",
+          "value": "rhode island"
+        },
+        "source": {
+          "name": "source",
+          "value": "home"
+        },
+        "destination": {
+          "name": "destination",
+          "value": "noma"
         },
         "line": {
-          "name": "line",
-          "value": "red line"
-        },
-        "incidenttype": {
-          "name": "incidenttype",
-          "value": "delays"
+          "name": "line"
         }
       }
     },
