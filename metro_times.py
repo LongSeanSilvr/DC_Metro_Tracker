@@ -87,7 +87,7 @@ def get_welcome_response():
 # Skill Intent: Commute Estimate
 # ======================================================================================================================
 def commute_estimate(intent, session):
-    card_title = "commute_estimate"
+    card_title = "Commute Estimate"
     should_end_session = True
     session_attributes = {}
     station_data = get_stations()
@@ -190,7 +190,7 @@ def api_estimate(station_code, destination_code):
 # Skill Intent: Get Times
 # ======================================================================================================================
 def get_times(intent, session):
-    card_title = intent['name']
+    card_title = "Train Times"
     session_attributes = {}
     should_end_session = True
     reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
@@ -505,7 +505,7 @@ def update_home(intent, session):
 # Skill Intent: query home station
 # ======================================================================================================================
 def get_home(session):
-    card_title = "home station"
+    card_title = "Home Station"
     should_end_session = True
     session_attributes = {}
     reprompt_text = "Try saying what is my home station"
