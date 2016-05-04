@@ -77,8 +77,7 @@ def get_welcome_response():
     card_title = "Welcome"
     session_attributes = {}
     speech_output = "Ok, ready to give you train times."
-    reprompt_text = ("Ask for a train time by saying, for example, "
-                     "when is the next train from Dupont Circle to Shady Grove?")
+    reprompt_text = "Try saying when is the next train from Dupont Circle to Shady Grove?"
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
@@ -173,8 +172,8 @@ def retrieve_estimate(station_options, destination_options):
 def api_estimate(station_code, destination_code):
     if station_code == destination_code:
         return "same_stations"
-    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b', }
-    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code, })
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
+    params = urllib.urlencode({'FromStationCode': station_code, 'ToStationCode': destination_code,})
     try:
         conn = httplib.HTTPSConnection('api.wmata.com')
         conn.request("GET", "/Rail.svc/json/jSrcStationToDstStationInfo?{}".format(params), "{body}", headers)
@@ -307,7 +306,7 @@ def query_station(station, destination, line, home):
 
 
 def retrieve_times(st_code):
-    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b', }
+    headers = {'api_key': '0b6b7bdc525a4abc9d0ad9879bd5d17b',}
     params = urllib.urlencode({})
 
     try:
@@ -509,7 +508,7 @@ def get_home(session):
     card_title = "home station"
     should_end_session = True
     session_attributes = {}
-    reprompt_text = "to get your home station say what is my home station"
+    reprompt_text = "Try saying what is my home station"
 
     user_id = session['user']['userId']
     home = lookup_home(user_id)
@@ -517,8 +516,7 @@ def get_home(session):
     if home is not None:
         speech_output = "Your home station is currently set to {}".format(home)
     else:
-        speech_output = "You currently do not have a home station set. To set a home station, say something like " \
-                        "set my home station to Metro Center."
+        speech_output = "You currently do not have a home station set."
 
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
@@ -532,9 +530,9 @@ def help_response():
     card_title = "Help"
     session_attributes = {}
     should_end_session = False
-    reprompt_text = ""
-    speech_output = "To get metro times, say something like: 'when's the next train from Metro center to Brookland.'" \
-                    "To set your home station, say something like 'set my home station to Metro Center.'"
+    reprompt_text = "What station would you like train times for?"
+    speech_output = ("I can give you train arrival times, travel time estimates, or let you know about alerts on a "
+                     "particular metro line. What station would you like train times for?")
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
@@ -545,7 +543,7 @@ def help_response():
 def exit_app():
     card_title = "Exiting"
     session_attributes = {}
-    should_end_session = False
+    should_end_session = True
     reprompt_text = ""
     speech_output = "Thank you for using MetroTracker! Goodbye."
     return build_response(session_attributes, build_speechlet_response(
@@ -698,28 +696,26 @@ def get_speech_output(flag, station=None, destination=None, line=None):
     if flag is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
     elif line == "line":
-        speech_output = "sorry, I don't recognize that line."
+        speech_output = "sorry, I don't recognize that line. Please repeat your request using a valid metro line."
     elif flag == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
     elif flag == "no_origin":
-        speech_output = "Sorry, you must either specify an origin station or set a default home station. " \
-                        "To set a default home station say, for example, set my home station to Dupont Circle."
+        speech_output = "Please specify an origin station or set a default home station."
     elif flag == "no_destination":
-        speech_output = "To get travel times, you must specify a destination. For example, Say travel " \
-                        "times from Dupont to Shady Grove."
+        speech_output = "Please specify a destination in order to get travel times"
     elif flag == "no_home":
-        speech_output = "You don't currently have a home station set. To set a home station say, for example, " \
-                        "Alexa, ask metro times to set my home station to Dupont Circle."
+        speech_output = "You don't currently have a home station set."
     elif flag == "invalid_destination":
-        speech_output = "Sorry, I don't recognize that destination."
+        speech_output = ("Sorry, I don't recognize that destination. Please repeat your request using a valid "
+                        "metro station.")
     elif flag == "invalid_station":
-        speech_output = "Sorry, I don't recognize that station."
+        speech_output = "Sorry, I don't recognize that station. Please repeat your request using a valid metro station."
     elif flag == "invalid_source_line":
         speech_output = "Sorry, {} does not service {} line trains.".format(station, line)
     elif flag == "invalid_dest_line":
         speech_output = "Sorry, {} does not service {} line trains.".format(destination, line)
     elif flag == "no_intersection":
-        speech_output = "Those stations don't connect."
+        speech_output = "Sorry, those stations don't connect. Please try again using stations on the same metro line."
     elif flag in ("mordor", "Mordor"):
         speech_output = "One does not simply metro to Mordor."
     elif flag in ("dulles", "Dulles"):
@@ -727,7 +723,7 @@ def get_speech_output(flag, station=None, destination=None, line=None):
     elif flag == "conn_problem":
         speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
     elif flag == "same_stations":
-        speech_output = "Those stations are the same you silly goose!"
+        speech_output = "Those are the same stations you silly goose!"
     elif flag == "no_incidents":
         speech_output = "There are no incidents or alerts currently listed."
     elif isinstance(flag, int):
