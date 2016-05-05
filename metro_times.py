@@ -76,8 +76,8 @@ def on_session_ended(session_ended_request, session):
 def get_welcome_response():
     card_title = "Welcome"
     session_attributes = {}
-    speech_output = "Ok, ready to give you train times."
-    reprompt_text = "Try saying when is the next train from Dupont Circle to Shady Grove?"
+    speech_output = "Metro tracker is ready to give you train times."
+    reprompt_text = ("What station would you like train times for?")
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
@@ -98,11 +98,11 @@ def commute_estimate(intent, session):
     # Validate that user has given a recognized source station. If not, set to home
     try:
         st = essentialize_station_name(intent['slots']['source']['value'])
-        if st == "home":
+        if st in ("home","here"):
             if home:
                 st = home
             else:
-                speech_output = get_speech_output("no_home")
+                speech_output, should_end_session = get_speech_output("no_home")
                 print(speech_output)
                 return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
                                                                                    should_end_session))
@@ -110,7 +110,7 @@ def commute_estimate(intent, session):
         station = station_lookup(st, station_data, home)
 
         if not station:
-            speech_output = "Sorry, I don't recognize station {}.".format(st)
+            speech_output, should_end_session = get_speech_output("invalid_station")
             print(speech_output)
             return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
                                                                                should_end_session))
@@ -118,21 +118,30 @@ def commute_estimate(intent, session):
         if home:
             station = home
         else:
-            speech_output = get_speech_output("no_origin")
+            speech_output, should_end_session = get_speech_output("no_origin")
             print(speech_output)
             return build_response(session_attributes, build_speechlet_response(
                 card_title, speech_output, should_end_session))
 
     try:
         dst = essentialize_station_name(intent['slots']['destination']['value'])
+        if dst in ("home","here"):
+            if home:
+                dst = home
+            else:
+                speech_output, should_end_session = get_speech_output("no_home")
+                print(speech_output)
+                return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
+                                                                                   should_end_session))
+
         destination = station_lookup(dst, station_data, home)
         if not destination:
-            speech_output = "Sorry, I don't recognize station {}.".format(dst)
+            speech_output, should_end_session = get_speech_output("invalid_destination")
             print(speech_output)
             return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
                                                                                should_end_session))
     except KeyError:
-        speech_output = get_speech_output("no_destination")
+        speech_output, should_end_session = get_speech_output("no_destination")
         print(speech_output)
         return build_response(session_attributes, build_speechlet_response(
             card_title, speech_output, should_end_session))
@@ -147,7 +156,7 @@ def commute_estimate(intent, session):
 
     # Get travel time estimate and construct speech output
     estimate = retrieve_estimate(station_options, destination_options)
-    speech_output = get_speech_output(estimate, station, destination)
+    speech_output, should_end_session = get_speech_output(estimate, station, destination)
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session))
@@ -193,7 +202,7 @@ def get_times(intent, session):
     card_title = "Train Times"
     session_attributes = {}
     should_end_session = True
-    reprompt_text = "Get metro times by saying, for example, when is the next train from Dupont Circle."
+    reprompt_text = "What station would you like train times for?"
 
     user_id = session['user']['userId']
     home = lookup_home(user_id)
@@ -202,13 +211,21 @@ def get_times(intent, session):
         # Grab station info from intent
         station = intent['slots']['station']['value']
         station = essentialize_station_name(station)
+        if station in ("home","here"):
+            if home:
+                station = home
+            else:
+                speech_output, should_end_session = get_speech_output("no_home")
+                print(speech_output)
+                return build_response(session_attributes, build_speechlet_response(
+                    card_title, speech_output, should_end_session, reprompt_text))
     except:
         # if no station specified, treat home as origin point if user has set a home station
         if home:
             station = home
         # otherwise, throw an error about supplying an origin.
         else:
-            speech_output = get_speech_output("no_origin")
+            speech_output, should_end_session = get_speech_output("no_origin")
             return build_response(session_attributes, build_speechlet_response(
                 card_title, speech_output, should_end_session, reprompt_text))
 
@@ -216,6 +233,14 @@ def get_times(intent, session):
     if len(intent['slots']['destination']) > 1:
         dest = intent['slots']['destination']['value']
         dest = essentialize_station_name(dest)
+        if dest in ("home","here"):
+            if home:
+                dest = home
+            else:
+                speech_output, should_end_session = get_speech_output("no_home")
+                print(speech_output)
+                return build_response(session_attributes, build_speechlet_response(card_title, speech_output,
+                                                                                   should_end_session))
     else:
         dest = None
 
@@ -228,9 +253,8 @@ def get_times(intent, session):
 
     # retrieve train times for supplied params and construct speech output
     (times, station, destination) = query_station(station, dest, line, home)
-    speech_output = get_speech_output(times, station, destination, line)
-    reprompt_text = ""
 
+    speech_output, should_end_session = get_speech_output(times, station, destination, line)
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
@@ -389,14 +413,14 @@ def get_incidents(intent, session):
     session_attributes = {}
     should_end_session = True
     card_title = "Incident Report"
-    reprompt_text = "Ask about incidents or alerts for a particular station"
+    reprompt_text = "Ask about delays or alerts for a particular station"
 
     incident_data = incidents_from_api()
 
     if incident_data is None:
-        speech_output = get_speech_output("conn_problem")
+        speech_output, should_end_session = get_speech_output("conn_problem")
     elif not incident_data['Incidents']:
-        speech_output = get_speech_output("no_incidents")
+        speech_output, should_end_session = get_speech_output("no_incidents")
     else:
         events = []
         try:
@@ -435,12 +459,12 @@ def get_incidents(intent, session):
             else:
                 speech_output = "There are currently no {} listed.".format(type)
 
-    speech_output = speech_output.replace(r'&', 'and')
-    speech_output = speech_output.replace(r'btwn', 'between')
-    speech_output = re.sub(r'\balt\b', 'alternative', speech_output)
-    speech_output = re.sub(r'\bmin\b', 'minutes', speech_output)
-    speech_output = re.sub(r'\w+ Line: ', '', speech_output)
-    speech_output = speech_output.replace(r':', ',')
+        speech_output = speech_output.replace(r'&', 'and')
+        speech_output = speech_output.replace(r'btwn', 'between')
+        speech_output = re.sub(r'\balt\b', 'alternative', speech_output)
+        speech_output = re.sub(r'\bmin\b', 'minutes', speech_output)
+        speech_output = re.sub(r'\w+ Line: ', '', speech_output)
+        speech_output = speech_output.replace(r':', ',')
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
@@ -461,11 +485,12 @@ def incidents_from_api():
 
 
 def inc_line_filter(incident, line):
+    description = ""
     affected_lines = incident["LinesAffected"].split(";")
     for affected_line in affected_lines:
         if affected_line and (line in code2line(affected_line)):
             description = incident['Description']
-            return description
+    return description
 
 
 # ======================================================================================================================
@@ -490,7 +515,7 @@ def update_home(intent, session):
         client.update_item(TableName='metro_times_user_ids', Key={'user_id': {'S': user_id}},
                            ExpressionAttributeValues={":home": {"S": home}}, UpdateExpression='SET home = :home')
     except Exception:
-        speech_output = "Sorry, I was unable to set your home station."
+        speech_output, should_end_session = get_speech_output("UserID_Database_prob")
         print(speech_output)
         return build_response(session_attributes, build_speechlet_response(
             card_title, speech_output, should_end_session, reprompt_text))
@@ -545,7 +570,7 @@ def exit_app():
     session_attributes = {}
     should_end_session = True
     reprompt_text = ""
-    speech_output = "Thank you for using MetroTracker! Goodbye."
+    speech_output = "Goodbye."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
@@ -695,43 +720,69 @@ def essentialize_station_name(station):
 def get_speech_output(flag, station=None, destination=None, line=None):
     if flag is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
+        should_end_session = True
+    # Unrecognized line from GetTimes
     elif line == "line":
         speech_output = "sorry, I don't recognize that line. Please repeat your request using a valid metro line."
+        should_end_session = False
     elif flag == "unknown_station":
         speech_output = "The Metro transit website is unresponsive. Please try again in a few minutes."
+        should_end_session = True
     elif flag == "no_origin":
-        speech_output = "Please specify an origin station or set a default home station."
+        speech_output = "Sorry, I didn't detect an origin station. Please repeat your request including a valid " \
+                        "origin station, or set a default home station."
+        should_end_session = False
     elif flag == "no_destination":
-        speech_output = "Please specify a destination in order to get travel times"
+        speech_output = "Sorry, I didn't detect a destination. Please repeat your request including a destination" \
+                        "in order to get travel times."
+        should_end_session = False
     elif flag == "no_home":
-        speech_output = "You don't currently have a home station set."
+        speech_output = "Sorry, you don't currently have a home station set. Please try again using specific " \
+                        "station names, or set a default home station."
+        should_end_session = False
     elif flag == "invalid_destination":
         speech_output = ("Sorry, I don't recognize that destination. Please repeat your request using a valid "
                         "metro station.")
+        should_end_session = False
     elif flag == "invalid_station":
         speech_output = "Sorry, I don't recognize that station. Please repeat your request using a valid metro station."
+        should_end_session = False
     elif flag == "invalid_source_line":
-        speech_output = "Sorry, {} does not service {} line trains.".format(station, line)
+        speech_output = "Sorry, {} does not service {} line trains. Please try again.".format(station, line)
+        should_end_session = False
     elif flag == "invalid_dest_line":
-        speech_output = "Sorry, {} does not service {} line trains.".format(destination, line)
+        speech_output = "Sorry, {} does not service {} line trains. Please try again".format(destination, line)
+        should_end_session = False
     elif flag == "no_intersection":
-        speech_output = "Sorry, those stations don't connect. Please try again using stations on the same metro line."
+        speech_output = ("Sorry, {} and {} don't connect. Please try again ".format(station, destination) +
+                         "using stations on the same metro line.")
+        should_end_session = False
     elif flag in ("mordor", "Mordor"):
         speech_output = "One does not simply metro to Mordor."
+        should_end_session = True
     elif flag in ("dulles", "Dulles"):
         speech_output = "One does not simply metro to dulles."
+        should_end_session = True
     elif flag == "conn_problem":
         speech_output = "I'm having trouble accessing the Metro transit website. Please try again in a few minutes."
+        should_end_session = True
+    elif flag == "UserID_Database_prob":
+        speech_output = "Sorry, I'm having trouble accessing the Metro Tracker database. Please try again in a " \
+                        "few minutes."
+        should_end_session = True
     elif flag == "same_stations":
-        speech_output = "Those are the same stations you silly goose!"
+        speech_output = "Those are the same stations you silly goose! Please try again."
+        should_end_session = False
     elif flag == "no_incidents":
-        speech_output = "There are no incidents or alerts currently listed."
+        speech_output = "There are no incidents or alerts currently listed for any metro line."
+        should_end_session = True
     elif isinstance(flag, int):
         if flag == 1:
             speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
         else:
             speech_output = "The current travel time between {} and {} is {} minutes.".format(station, destination,
                                                                                               flag)
+        should_end_session = True
     elif isinstance(flag, list):
         str_time = format_time(flag)
         if str_time:
@@ -751,9 +802,11 @@ def get_speech_output(flag, station=None, destination=None, line=None):
                                                                                                     destination)
                 else:
                     speech_output = "There are currently no trains scheduled for {}.".format(station)
+        should_end_session = True
     else:
         speech_output = "Hmm. I seem to have encountered an internal error. Please try your request again."
-    return speech_output
+        should_end_session = False
+    return speech_output, should_end_session
 
 
 def format_time(times):
