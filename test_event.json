@@ -6,7 +6,7 @@
     },
     "attributes": {},
     "user": {
-      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNBO5YCT4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAEB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5HANIYSRJ3P2FA6T25ZIUMDWDEQ"
+      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNB4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5HANIYSRJ3P2FA6T25ZIUMDWDEQ"
     },
     "new": false
   },
@@ -15,33 +15,10 @@
     "requestId": "EdwRequestId.e0c11e18-c451-44b7-8346-580d1cf51309",
     "timestamp": "2016-05-05T13:58:23Z",
     "intent": {
-      "name": "GetTimes",
+      "name": "UpdateHome",
       "slots": {
-        "line": {
-          "name": "line"
-        },
-        "link": {
-          "name": "link",
-          "value": "from"
-        },
-        "station": {
-          "name": "station",
-          "value": "home"
-        },
-        "destination": {
-          "name": "destination",
-          "value": "noma"
-        },
-        "towards": {
-          "name": "towards",
-          "value": "to"
-        },
-        "prompt": {
-          "name": "prompt"
-        },
-        "train": {
-          "name": "train",
-          "value": "train"
+        "home": {
+          "name": "home"
         }
       }
     },

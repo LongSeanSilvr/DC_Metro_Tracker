@@ -98,7 +98,7 @@ def commute_estimate(intent, session):
     # Validate that user has given a recognized source station. If not, set to home
     try:
         st = essentialize_station_name(intent['slots']['source']['value'])
-        if st in ("home","here"):
+        if st in ("home", "here"):
             if home:
                 st = home
             else:
@@ -125,7 +125,7 @@ def commute_estimate(intent, session):
 
     try:
         dst = essentialize_station_name(intent['slots']['destination']['value'])
-        if dst in ("home","here"):
+        if dst in ("home", "here"):
             if home:
                 dst = home
             else:
@@ -211,7 +211,7 @@ def get_times(intent, session):
         # Grab station info from intent
         station = intent['slots']['station']['value']
         station = essentialize_station_name(station)
-        if station in ("home","here"):
+        if station in ("home", "here"):
             if home:
                 station = home
             else:
@@ -233,7 +233,7 @@ def get_times(intent, session):
     if len(intent['slots']['destination']) > 1:
         dest = intent['slots']['destination']['value']
         dest = essentialize_station_name(dest)
-        if dest in ("home","here"):
+        if dest in ("home", "here"):
             if home:
                 dest = home
             else:
@@ -505,7 +505,14 @@ def update_home(intent, session):
     station_data = get_stations()
     user_id = session['user']['userId']
 
-    home = intent['slots']['home']['value']
+    try:
+        home = intent['slots']['home']['value']
+    except KeyError:
+        speech_output, should_end_session = get_speech_output("missing_home")
+        print(speech_output)
+        return build_response(session_attributes, build_speechlet_response(
+            card_title, speech_output, should_end_session, reprompt_text))
+
     home = essentialize_station_name(home)
     home = station_lookup(home, station_data, home)
 
@@ -740,9 +747,13 @@ def get_speech_output(flag, station=None, destination=None, line=None):
         speech_output = "Sorry, you don't currently have a home station set. Please try again using specific " \
                         "station names, or set a default home station."
         should_end_session = False
+    elif flag == "missing_home":
+        speech_output = "To set your home station please include the name of a valid metro station. For " \
+                        "instance, try saying: 'set my home station to Fort Totten.'"
+        should_end_session = False
     elif flag == "invalid_destination":
         speech_output = ("Sorry, I don't recognize that destination. Please repeat your request using a valid "
-                        "metro station.")
+                         "metro station.")
         should_end_session = False
     elif flag == "invalid_station":
         speech_output = "Sorry, I don't recognize that station. Please repeat your request using a valid metro station."
