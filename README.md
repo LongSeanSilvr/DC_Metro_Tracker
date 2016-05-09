@@ -1,2 +1,2 @@
 # DC Metro Tracker
-This is a "skill" (app) designed for Alexa-enabled devices (e.g. Amazon Echo). Ask Alexa for trains arriving at a particular DC metro station (optionally specifying a direction of travel) to have her read out a list of upcoming trains
+![alt tag](https://cloud.githubusercontent.com/assets/18245892/15111844/ddfb786c-15b7-11e6-9fc4-88dbeaf7144b.JPG)
