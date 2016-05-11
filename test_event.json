@@ -1,24 +1,24 @@
 {
   "session": {
-    "sessionId": "SessionId.b21f87c4-27d6-4b50-9472-54a2da6a414a",
+    "sessionId": "SessionId.0f3fc443-1068-4e34-8201-26a4cea6d3c1",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
-    "attributes": {},
     "user": {
-      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNB4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5HANIYSRJ3P2FA6T25ZIUMDWDEQ"
+      "userId": "amzn1.ask.account.AFP3ZWPOS2BGJR7OWJZ3DHPKMOMNWY4AY66FUR7ILBWANIHQN73QHMS3XGEVNWXIAVHCVX7GL4IOSB4OAO6WFMJTVIQWNBO5YCT4IWXRN5RHVUOU7CKMLTKOQ43CAHNM2TIAEB6SCKTAPUM4LH2JJCA5TBQ3ORAIYR6TUDJMRR442QJM3V6Q5HANIYSRJ3P2FA6T25ZIUMDWDEQ"
     },
-    "new": false
+    "new": true
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.e0c11e18-c451-44b7-8346-580d1cf51309",
-    "timestamp": "2016-05-05T13:58:23Z",
+    "requestId": "EdwRequestId.9542ff6c-0115-48bd-968d-52e9faa3d4b4",
+    "timestamp": "2016-05-11T22:39:23Z",
     "intent": {
       "name": "UpdateHome",
       "slots": {
         "home": {
-          "name": "home"
+          "name": "home",
+          "value": "noma"
         }
       }
     },

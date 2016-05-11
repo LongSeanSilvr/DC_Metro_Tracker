@@ -449,7 +449,11 @@ def get_incidents(intent, session):
                     if incident['IncidentType'].lower() in type:
                         description = incident['Description']
                         events.append(description)
-        speech_output = " ".join(events)
+
+        speech_output = ""
+        for event in events:
+            if event:
+                speech_output += "{} ".format(event)
 
         if not speech_output:
             if len(intent['slots']['line']) > 1:
@@ -527,7 +531,7 @@ def update_home(intent, session):
         return build_response(session_attributes, build_speechlet_response(
             card_title, speech_output, should_end_session, reprompt_text))
 
-    speech_output = "OK, updated your home station to {}".format(home)
+    speech_output, should_end_session = get_speech_output("home_updated", home)
     print(speech_output)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
@@ -725,6 +729,13 @@ def essentialize_station_name(station):
 
 
 def get_speech_output(flag, station=None, destination=None, line=None):
+    # Fix speech errors in station names before constructing speech output
+    if station:
+        station = fix_speech(station)
+    if destination:
+        destination = fix_speech(destination)
+
+    # Construct appropriate speech output based on flag passed
     if flag is None:
         speech_output = "I'm having trouble reaching the Metro Transit website. Please try again in a few minutes."
         should_end_session = True
@@ -787,6 +798,9 @@ def get_speech_output(flag, station=None, destination=None, line=None):
     elif flag == "no_incidents":
         speech_output = "There are no incidents or alerts currently listed for any metro line."
         should_end_session = True
+    elif flag == "home_updated":
+        speech_output = "OK, updated your home station to {}".format(station)
+        should_end_session = True
     elif isinstance(flag, int):
         if flag == 1:
             speech_output = "The current travel time between {} and {} is {} minute.".format(station, destination, flag)
@@ -819,6 +833,15 @@ def get_speech_output(flag, station=None, destination=None, line=None):
         should_end_session = False
     return speech_output, should_end_session
 
+def fix_speech(station_name):
+    re.sub(r"-cua", r" CUA", station_name)
+    re.sub(r"-udc", r" UDC", station_name)
+    re.sub(r"-gmu", r" GMU", station_name)
+    re.sub(r"-mu", r" MU", station_name)
+    re.sub(r"-au", r" AU", station_name)
+    re.sub(r'gallaudet u', r'Gallaudet University', station_name)
+    re.sub(r"-u of md", r"University of Maryland", station_name)
+    return station_name
 
 def format_time(times):
     response = ""

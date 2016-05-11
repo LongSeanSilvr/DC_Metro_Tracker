@@ -66,6 +66,7 @@ target/
 
 # backup
 /wmata_metro_backup.zip
+/MetroTracker_backup*
 
 # dev
 /metro_times_development.py
