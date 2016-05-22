@@ -53,8 +53,10 @@ def on_intent(intent_request, session):
         return commute_estimate(intent, session)
     elif intent_name == "Incidents":
         return get_incidents(intent, session)
+    elif intent_name == "OnFire":
+        return on_fire()
     elif intent_name == "UpdateHome":
-        return update_home(intent, session, )
+        return update_home(intent, session)
     elif intent_name == "GetHome":
         return get_home(session)
     elif intent_name == "Help":
@@ -558,6 +560,52 @@ def get_home(session):
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, should_end_session, reprompt_text))
 
+# ======================================================================================================================
+# Skill Intent: On Fire?
+# ======================================================================================================================
+def on_fire():
+    card_title = "Is Metro On Fire?"
+    session_attributes = {}
+    should_end_session = True
+    reprompt_text = "Ask whether the metro is on fire"
+
+    # Grab Data from Fire API
+    try:
+        #fire_data = '{"counts":{"red":false,"orange":false,"yellow":false,"green":false,"blue":false,"silver":false},"message":"Negative"}'
+        fire_data = urllib.urlopen("https://ismetroonfire.com/fireapi").read()
+        fire_data = json.loads(fire_data)
+    except:
+        speech_output = "I'm having trouble reaching 'ismetroonfire.com.' please try again in a few minutes."
+        print(speech_output)
+        return build_response(session_attributes, build_speechlet_response(
+            card_title, speech_output, should_end_session, reprompt_text))
+
+    # Make list of lines currently on fire
+    fire_lines = []
+    for line in fire_data['counts']:
+        if fire_data['counts'][line]:
+            fire_lines.append(line)
+
+    # Construct appropriate Speech output
+    if fire_lines:
+        if len(fire_lines) == 1:
+            speech_output = "Why yes, the {} line is on fire today.".format(fire_lines[0])
+        else:
+            speech_output = "Why yes, "
+            for i in xrange(0,len(fire_lines)):
+                if len(fire_lines)-i == 1:
+                    speech_output += "and "
+                speech_output += "the {} line, ".format(fire_lines[i])
+            speech_output = speech_output[0:-2]
+            speech_output += " are on fire today."
+            if len(fire_lines) == 2:
+                speech_output = re.sub(r', and', r' and', speech_output)
+    else:
+        speech_output = "Not yet!"
+
+    print(speech_output)
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, should_end_session, reprompt_text))
 
 # ======================================================================================================================
 # Skill Intent: Help
@@ -834,13 +882,14 @@ def get_speech_output(flag, station=None, destination=None, line=None):
     return speech_output, should_end_session
 
 def fix_speech(station_name):
-    re.sub(r"-cua", r" CUA", station_name)
-    re.sub(r"-udc", r" UDC", station_name)
-    re.sub(r"-gmu", r" GMU", station_name)
-    re.sub(r"-mu", r" MU", station_name)
-    re.sub(r"-au", r" AU", station_name)
-    re.sub(r'gallaudet u', r'Gallaudet University', station_name)
-    re.sub(r"-u of md", r"University of Maryland", station_name)
+    station_name = re.sub(r"-cua", r" C U A", station_name)
+    station_name = re.sub(r"-udc", r" U D C", station_name)
+    station_name = re.sub(r"-gmu", r" G M U", station_name)
+    station_name = re.sub(r"-mu", r" M U", station_name)
+    station_name = re.sub(r"-au", r" A U", station_name)
+    station_name = re.sub(r"St-", r"street ", station_name, re.IGNORECASE)
+    station_name = re.sub(r'gallaudet u', r'Gallaudet University', station_name)
+    station_name = re.sub(r"-u of md", r"University of Maryland", station_name)
     return station_name
 
 def format_time(times):
@@ -873,9 +922,9 @@ def format_time(times):
 
         # singularize 'minutes' if minutes = 1
         if minutes == "1":
-            response += "{} to {} in {} minute, ".format(line, station, minutes)
+            response += "{} to {} in {} minute, ".format(line, fix_speech(station), minutes)
         else:
-            response += "{} to {} in {} minutes, ".format(line, station, minutes)
+            response += "{} to {} in {} minutes, ".format(line, fix_speech(station), minutes)
 
     # remove comma from end of line and replace with period.
     if response:

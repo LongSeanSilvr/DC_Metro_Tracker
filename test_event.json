@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.0f3fc443-1068-4e34-8201-26a4cea6d3c1",
+    "sessionId": "SessionId.575f56dc-1ed3-48e2-b61b-831a4a69f9f4",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,14 +11,32 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.9542ff6c-0115-48bd-968d-52e9faa3d4b4",
-    "timestamp": "2016-05-11T22:39:23Z",
+    "requestId": "EdwRequestId.5471d435-a9b2-4a92-b862-1e0efaed8814",
+    "timestamp": "2016-05-16T21:10:50Z",
     "intent": {
-      "name": "UpdateHome",
+      "name": "GetTimes",
       "slots": {
-        "home": {
-          "name": "home",
-          "value": "noma"
+        "line": {
+          "name": "line"
+        },
+        "link": {
+          "name": "link"
+        },
+        "station": {
+          "name": "station",
+          "value": "airport"
+        },
+        "destination": {
+          "name": "destination"
+        },
+        "towards": {
+          "name": "towards"
+        },
+        "prompt": {
+          "name": "prompt"
+        },
+        "train": {
+          "name": "train"
         }
       }
     },
