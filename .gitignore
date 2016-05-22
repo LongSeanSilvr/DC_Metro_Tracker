@@ -71,3 +71,6 @@ target/
 # dev
 /metro_times_development.py
 /metro_times_development.zip
+
+#profile results
+/profile_results*
