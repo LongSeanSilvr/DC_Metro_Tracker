@@ -1,6 +1,6 @@
 {
   "session": {
-    "sessionId": "SessionId.575f56dc-1ed3-48e2-b61b-831a4a69f9f4",
+    "sessionId": "SessionId.483020ca-22cc-4b2b-8728-7fc7cb1affd7",
     "application": {
       "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
     },
@@ -11,8 +11,8 @@
   },
   "request": {
     "type": "IntentRequest",
-    "requestId": "EdwRequestId.5471d435-a9b2-4a92-b862-1e0efaed8814",
-    "timestamp": "2016-05-16T21:10:50Z",
+    "requestId": "EdwRequestId.5c4531ab-21d5-49ac-9490-7fb01f2ed580",
+    "timestamp": "2016-05-23T03:51:13Z",
     "intent": {
       "name": "GetTimes",
       "slots": {
@@ -20,23 +20,26 @@
           "name": "line"
         },
         "link": {
-          "name": "link"
+          "name": "link",
+          "value": "from"
         },
         "station": {
-          "name": "station",
-          "value": "airport"
+          "name": "station"
         },
         "destination": {
-          "name": "destination"
+          "name": "destination",
+          "value": "noma"
         },
         "towards": {
-          "name": "towards"
+          "name": "towards",
+          "value": "to"
         },
         "prompt": {
           "name": "prompt"
         },
         "train": {
-          "name": "train"
+          "name": "train",
+          "value": "train"
         }
       }
     },

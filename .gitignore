@@ -71,6 +71,11 @@ target/
 # dev
 /metro_times_development.py
 /metro_times_development.zip
+/unit_test.py
 
-#profile results
+# profile results
 /profile_results*
+
+# unit test files
+/test_events/*
+/test_results.txt
