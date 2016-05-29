@@ -14,7 +14,7 @@
     "requestId": "EdwRequestId.5c4531ab-21d5-49ac-9490-7fb01f2ed580",
     "timestamp": "2016-05-23T03:51:13Z",
     "intent": {
-      "name": "GetTimes",
+      "name": "OnFire",
       "slots": {
         "line": {
           "name": "line"

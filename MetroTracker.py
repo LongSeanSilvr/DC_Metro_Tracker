@@ -542,7 +542,7 @@ def on_fire(intent, session, start):
             if len(fire_lines) == 2:
                 speech_output = re.sub(r', and', r' and', speech_output)
     else:
-        speech_output = "Not yet!"
+        speech_output = "Not at the moment!"
 
     return build_response(card_title, flag="fire_report", start=start, text=speech_output, reprompt_text=reprompt_text)
 
