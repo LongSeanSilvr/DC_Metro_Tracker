@@ -79,3 +79,6 @@ target/
 # unit test files
 /test_events/*
 /test_results.txt
+
+# Metrics
+/metrics/*

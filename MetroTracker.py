@@ -5,10 +5,12 @@ This app returns train times for the Metro DC transit system.
 from __future__ import print_function
 import sys
 from time import time
+from datetime import datetime
 import httplib
 import urllib
 import json
 import re
+import boto3
 
 
 # ======================================================================================================================
@@ -26,12 +28,14 @@ def lambda_handler(event, context=None):
 # Session Event Functions
 # ======================================================================================================================
 def on_launch(launch_request, session, start):
+    track_user(session, u'Launch')
     return get_welcome_response(start)
 
 
 def on_intent(intent_request, session, start):
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
+    track_user(session, intent_name)
     intent_dict = {
         'GetTimes': get_times,
         'CommuteEstimate': commute_estimate,
@@ -460,7 +464,6 @@ def inc_text_builder(events, type, line=None):
 # Skill Intent: Update Home station
 # ======================================================================================================================
 def update_home(intent, session, start):
-    import boto3
     card_title = "Updating Home Station"
     reprompt_text = "to update your home station say, for example, set my home station to Dupont Circle"
 
@@ -640,7 +643,6 @@ def code2line(line, reverse=False):
 
 
 def lookup_home(user):
-    import boto3
     client = boto3.client('dynamodb')
 
     try:
@@ -758,6 +760,18 @@ def timed(speech, start):
     diff = now - start
     speech += "\n" + str(diff) + " seconds"
     return speech
+
+
+def track_user(session, action):
+    client = boto3.client('dynamodb')
+    User_ID = session['user']['userId']
+    now = datetime.now()
+    access_time = "{} -- {:02d}:{:02d}".format(now.date(), (now.hour-4), now.minute)
+    client.update_item(TableName='MetroTracker_Users', Key={'User_ID': {'S': User_ID}},
+                       ExpressionAttributeValues={":Last_Accessed": {"S": access_time},
+                                                  ":Function": {"S": action}},
+                       UpdateExpression='SET Last_Accessed = :Last_Accessed,'
+                                        'Intent = :Function')
 
 
 # ======================================================================================================================
