@@ -64,21 +64,14 @@ target/
 # Pycharm files
 /.idea/*
 
-# backup
-/backups/wmata_metro_backup.zip
-/MetroTracker_backup*
-
-# dev
-/src/metro_times_development.py
-/backups/metro_times_development.zip
-/src/unit_test.py
-
 # profile results
-/profile_results*
+/documentation/profile_results.prof
 
-# unit test files
-/test_events/*
-/test_results.txt
+# test files
+#/live_version/test_events/*
 
 # Metrics
 /metrics/*
+
+# Dev
+#/development_version/*
