@@ -1,0 +1,34 @@
+{
+  "session": {
+    "sessionId": "SessionId.8f5fcc19-ec19-49a8-a52a-3e0638800d2c",
+    "application": {
+      "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
+    },
+    "user": {
+      "userId": "test"
+    },
+    "new": true
+  },
+  "request": {
+    "type": "IntentRequest",
+    "requestId": "EdwRequestId.4f382865-b38a-4941-aad2-8b1890e776df",
+    "timestamp": "2016-05-22T21:51:09Z",
+    "intent": {
+      "name": "Incidents",
+      "slots": {
+        "incidentprompt": {
+          "name": "incidentprompt"
+        },
+        "line": {
+          "name": "line"
+        },
+        "incidenttype": {
+          "name": "incidenttype",
+          "value": "delays"
+        }
+      }
+    },
+    "locale": "en-US"
+  },
+  "version": "1.0"
+}

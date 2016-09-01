@@ -1,0 +1,112 @@
+2. test_CommuteEstimate_bare.json
+	Card: Commute Estimate
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+3. test_CommuteEstimate_dst.json
+	Card: Commute Estimate
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+4. test_CommuteEstimate_noIntersection.json
+	Card: Commute Estimate
+	Output: Sorry, shaw-howard u and farragut north don't connect. Please try again using stations on the same metro line.
+
+5. test_CommuteEstimate_st.json
+	Card: Commute Estimate
+	Output: Sorry, I didn't detect a destination. Please repeat your request including a destinationin order to get travel times.
+
+6. test_CommuteEstimate_st_dst.json
+	Card: Commute Estimate
+	Output: The current travel time between noma-Gallaudet University and farragut north is 10 minutes.
+
+7. test_exit.json
+	Card: Exiting
+	Output: Goodbye.
+
+8. test_GetHome.json
+	Card: Home Station
+	Output: You currently do not have a home station set.
+
+9. test_GetTimes_bare.json
+	Card: Train Times
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+10. test_GetTimes_dst.json
+	Card: Train Times
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+11. test_GetTimes_Dulles.json
+	Card: Train Times
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+12. test_GetTimes_lineFiltered.json
+	Card: Train Times
+	Output: Sorry, farragut north does not service blue line trains. Please try again.
+
+13. test_GetTimes_lineWrong.json
+	Card: Train Times
+	Output: Sorry, dupont circle does not service green line trains. Please try again.
+
+14. test_GetTimes_Mordor.json
+	Card: Train Times
+	Output: Sorry, I didn't detect an origin station. Please repeat your request including a valid origin station, or set a default home station.
+
+15. test_GetTimes_noIntersection.json
+	Card: Train Times
+	Output: Sorry, shaw-howard u and tenleytown don't connect. Please try again using stations on the same metro line.
+
+16. test_GetTimes_st.json
+	Card: Train Times
+	Output: there is a red line to Shady Grove in 13 minutes, a red line to Glenmont in 18 minutes, and a ghost train to a ghost station in 37 minutes.
+
+17. test_GetTimes_st_dst.json
+	Card: Train Times
+	Output: there is a red line to Shady Grove in 13 minutes.
+
+18. test_help.json
+	Card: Help
+	Output: I can give you train arrival times, travel time estimates, or let you know about alerts on a particular metro line. What station would you like train times for?
+
+19. test_Incidents_alerts.json
+	Card: Incident Report
+	Output: Trains every 24 minutes due to rebuilding. Check schedules at wmata.com 
+
+20. test_Incidents_alerts_noLine.json
+	Card: Incident Report
+	Output: Blue and Orange Line: Due to scheduled track work, buses replace trains between Stadium-Armory and Capitol Heights and New Carrollton through tonight's closing. Red Line: Trains every 24 minutes due to rebuilding. Check schedules at wmata.com Silver Line: Trains every 12 minutes between Wiehle-Reston E. and East Falls Church. 
+
+21. test_Incidents_bare.json
+	Card: Incident Report
+	Output: Blue and Orange Line: Due to scheduled track work, buses replace trains between Stadium-Armory and Capitol Heights and New Carrollton through tonight's closing. Red Line: Trains every 24 minutes due to rebuilding. Check schedules at wmata.com Silver Line: Trains every 12 minutes between Wiehle-Reston E. and East Falls Church. 
+
+22. test_Incidents_delays.json
+	Card: Incident Report
+	Output: There are  currently no delays listed for the red line
+
+23. test_Incidents_delays_noLine.json
+	Card: Incident Report
+	Output: There are currently no delays listed.
+
+24. test_Incidents_incidents.json
+	Card: Incident Report
+	Output: Due to scheduled track work, buses replace trains between Stadium-Armory and Capitol Heights and New Carrollton through tonight's closing. 
+
+25. test_launch.json
+	Card: Welcome
+	Output: Metro tracker is ready to give you train times.
+
+26. test_OnFire.json
+	Card: Is Metro On Fire?
+	Output: Not yet!
+
+28. test_UpdateHome_invalidst.json
+	Card: Updating Home Station
+	Output: Sorry, I'm having trouble accessing the Metro Tracker database. Please try again in a few minutes.
+
+29. test_UpdateHome_noSt.json
+	Card: Updating Home Station
+	Output: To set your home station please include the name of a valid metro station. For instance, try saying: 'set my home station to Fort Totten.'
+
+30. test_UpdateHome_st.json
+	Card: Updating Home Station
+	Output: OK, updated your home station to dupont circle
+

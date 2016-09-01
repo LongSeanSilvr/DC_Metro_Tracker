@@ -1,0 +1,112 @@
+1. test_CommuteEstimate_bare.json
+	Card: Commute Estimate
+	Output: Sorry, I didn't detect a destination. Please repeat your request including a destinationin order to get travel times.
+
+2. test_CommuteEstimate_dst.json
+	Card: Commute Estimate
+	Output: The current travel time between dupont circle and fort totten is
+
+3. test_CommuteEstimate_noIntersection.json
+	Card: Commute Estimate
+	Output: Sorry, shaw-howard u and farragut north don't connect. Please try again using stations on the same metro line.
+
+4. test_CommuteEstimate_st.json
+	Card: Commute Estimate
+	Output: Sorry, I didn't detect a destination. Please repeat your request including a destinationin order to get travel times.
+
+5. test_CommuteEstimate_st_dst.json
+	Card: Commute Estimate
+	Output: The current travel time between noma-Gallaudet University and farragut north is
+
+6. test_exit.json
+	Card: Exiting
+	Output: Goodbye.
+
+7. test_GetHome.json
+	Card: Home Station
+	Output: Your home station is currently set to dupont circle
+
+8. test_GetTimes_bare.json
+	Card: Train Times
+	Output: there is a red line to
+
+9. test_GetTimes_dst.json
+	Card: Train Times
+	Output: there is a red line to
+
+10. test_GetTimes_Dulles.json
+	Card: Train Times
+	Output: One does not simply metro to dulles.
+
+11. test_GetTimes_lineFiltered.json
+	Card: Train Times
+	Output: there is a
+
+12. test_GetTimes_lineWrong.json
+	Card: Train Times
+	Output: Sorry, dupont circle does not service green line trains. Please try again.
+
+13. test_GetTimes_Mordor.json
+	Card: Train Times
+	Output: One does not simply metro to Mordor.
+
+14. test_GetTimes_noIntersection.json
+	Card: Train Times
+	Output: Sorry, shaw-howard u and tenleytown don't connect. Please try again using stations on the same metro line.
+
+15. test_GetTimes_st.json
+	Card: Train Times
+	Output: there is a red line to
+
+16. test_GetTimes_st_dst.json
+	Card: Train Times
+	Output: there is a red line to
+
+17. test_help.json
+	Card: Help
+	Output: I can give you train arrival times, travel time estimates, or let you know about alerts on a particular metro line. What station would you like train times for?
+
+18. test_Incidents_alerts.json
+	Card: Incident Report
+	Output: There are  currently no alerts listed for the red line
+
+19. test_Incidents_alerts_noLine.json
+	Card: Incident Report
+	Output: Trains
+
+20. test_Incidents_bare.json
+	Card: Incident Report
+	Output: Trains
+
+21. test_Incidents_delays.json
+	Card: Incident Report
+	Output: There are  currently no delays listed for the red line
+
+22. test_Incidents_delays_noLine.json
+	Card: Incident Report
+	Output: There are currently no delays listed.
+
+23. test_Incidents_incidents.json
+	Card: Incident Report
+	Output: Trains
+
+24. test_launch.json
+	Card: Welcome
+	Output: Metro tracker is ready to give you train times.
+
+25. test_OnFire.json
+	Card: Is Metro On Fire?
+	Output: Not at the moment!
+
+26. test_UpdateHome_invalidst.json
+	Card: Updating Home Station
+	Output: Sorry, I'm having trouble accessing the Metro Tracker database. Please try again in a few minutes.
+
+27. test_UpdateHome_noSt.json
+	Card: Updating Home Station
+	Output: To set your home station please include the name of a valid metro station. For instance, try saying: 'set my home station to Fort Totten.'
+
+28. test_UpdateHome_st.json
+	Card: Updating Home Station
+	Output: OK, updated your home station to dupont circle
+

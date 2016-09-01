@@ -1,0 +1,23 @@
+{
+  "session": {
+    "sessionId": "SessionId.0db20374-5fa1-446f-801a-684e5912bc67",
+    "application": {
+      "applicationId": "amzn1.echo-sdk-ams.app.48d300b5-e643-4150-aaff-f8d1b92ed568"
+    },
+    "user": {
+      "userId": "test"
+    },
+    "new": true
+  },
+  "request": {
+    "type": "IntentRequest",
+    "requestId": "EdwRequestId.c4825d44-2d8b-41b9-929d-6b07f85387e2",
+    "timestamp": "2016-05-22T22:09:37Z",
+    "intent": {
+      "name": "OnFire",
+      "slots": {}
+    },
+    "locale": "en-US"
+  },
+  "version": "1.0"
+}
