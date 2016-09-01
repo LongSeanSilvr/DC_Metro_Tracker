@@ -1,16 +1,17 @@
 """
 This app returns train times for the Metro DC transit system.
+To Profile: -m cProfile -o profile_results.prof
 """
 
 from __future__ import print_function
-import sys
-from time import time
+import boto3
 from datetime import datetime
 import httplib
-import urllib
-import json
 import re
-import boto3
+import sys
+from time import time
+import ujson as json
+import urllib
 
 
 # ======================================================================================================================

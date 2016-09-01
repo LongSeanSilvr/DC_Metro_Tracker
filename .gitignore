@@ -65,13 +65,13 @@ target/
 /.idea/*
 
 # backup
-/wmata_metro_backup.zip
+/backups/wmata_metro_backup.zip
 /MetroTracker_backup*
 
 # dev
-/metro_times_development.py
-/metro_times_development.zip
-/unit_test.py
+/src/metro_times_development.py
+/backups/metro_times_development.zip
+/src/unit_test.py
 
 # profile results
 /profile_results*
