@@ -1,17 +1,16 @@
 """
 This app returns train times for the Metro DC transit system.
-To Profile: -m cProfile -o profile_results.prof
 """
 
 from __future__ import print_function
-import boto3
-from datetime import datetime
-import httplib
-import re
 import sys
 from time import time
-import ujson as json
+from datetime import datetime
+import httplib
 import urllib
+import json
+import re
+import boto3
 
 
 # ======================================================================================================================
@@ -190,7 +189,7 @@ def get_times(intent, session, start):
             return build_response(card_title, flag, start, reprompt_text=reprompt_text)
 
     # Grab destination info
-    if len(intent['slots']['destination']) > 1:
+    try:
         dest = intent['slots']['destination']['value']
         dest = essentialize_station_name(dest)
         if dest in ("home", "here"):
@@ -200,14 +199,14 @@ def get_times(intent, session, start):
             else:
                 flag = "no_home"
                 return build_response(card_title, flag, start, reprompt_text=reprompt_text)
-    else:
+    except:
         dest = None
 
     # Grab line info
-    if len(intent['slots']['line']) > 1:
+    try:
         line = intent['slots']['line']['value']
         line = line.split()[0]  # if line is in the form "x line", set line to x
-    else:
+    except:
         line = None
 
     # retrieve train times for supplied params and construct speech output
